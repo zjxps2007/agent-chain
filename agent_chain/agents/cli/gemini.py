@@ -1,10 +1,12 @@
-"""Google Gemini CLI 기반 에이전트 (Stub).
+"""Google Gemini CLI 호환 에이전트.
 
-Google은 공식 Gemini CLI를 별도로 제공하지 않습니다.
-gemini-cli (https://github.com/reugn/gemini-cli) 같은 서드파티 도구나
-gcloud CLI의 gemini 명령어를 사용한다고 가정하고 stub을 작성합니다.
+Google은 공식 Gemini CLI(google-gemini/gemini-cli)를 제공합니다.
+다만 Google I/O 2026 개발자 발표에서는 Gemini CLI 사용자에게
+Antigravity CLI로의 마이그레이션을 권장하고 있습니다.
 
-사용 시 config의 cli_command를 실제 바이너리 경로로 설정하세요.
+이 모듈은 기존 Gemini CLI 인터페이스와 호환하기 위한 어댑터입니다.
+신규 설정에서는 가능하면 antigravity_coder/antigravity_reviewer를 우선 사용하세요.
+사용 시 config의 cli_command로 실제 바이너리 경로를 지정할 수 있습니다.
 """
 
 from __future__ import annotations
@@ -16,7 +18,7 @@ from ...core import Context
 
 
 class GeminiCLICoder(CLICoderBase):
-    """Gemini CLI 코더 (stub).
+    """Gemini CLI 호환 코더.
 
     config:
       - cli_command: 실제 Gemini CLI 바이너리 (기본: "gemini")
@@ -49,7 +51,7 @@ class GeminiCLICoder(CLICoderBase):
 
 
 class GeminiCLIReviewer(CLIReviewerBase):
-    """Gemini CLI 리뷰어 (stub).
+    """Gemini CLI 호환 리뷰어.
 
     config:
       - cli_command: 실제 Gemini CLI 바이너리 (기본: "gemini")
