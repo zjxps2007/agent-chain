@@ -30,6 +30,22 @@ class ReviewResult:
         }
 
 
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, ReviewResult):
+        return value.to_dict()
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple, set)):
+        return [_json_safe(item) for item in value]
+    try:
+        json.dumps(value, ensure_ascii=False)
+    except TypeError:
+        return repr(value)
+    return value
+
+
 @dataclass
 class Context:
     """파이프라인 전체에서 공유되는 실행 컨텍스트."""
@@ -61,9 +77,9 @@ class Context:
             "language": self.language,
             "review": self.review.to_dict() if self.review else None,
             "reviews": [r.to_dict() for r in self.reviews],
-            "history": self.history,
+            "history": _json_safe(self.history),
             "iteration": self.iteration,
-            "metadata": self.metadata,
+            "metadata": _json_safe(self.metadata),
         }
 
 

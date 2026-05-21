@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -118,7 +119,9 @@ def test_context_to_dict_serializes_review_state(tmp_path: Path) -> None:
         suggestions=["제안"],
     )
     context.reviews.append(context.review)
+    context.log_step("reviewer", "reviewer", context.review)
     context.metadata["key"] = "value"
+    context.metadata["path"] = tmp_path
 
     data = context.to_dict()
 
@@ -132,5 +135,18 @@ def test_context_to_dict_serializes_review_state(tmp_path: Path) -> None:
     assert data["reviews"] == [
         {"status": "comment", "message": "참고", "suggestions": ["제안"], "line_comments": []}
     ]
-    assert data["history"] == []
-    assert data["metadata"] == {"key": "value"}
+    assert data["history"] == [
+        {
+            "iteration": 0,
+            "agent": "reviewer",
+            "role": "reviewer",
+            "output": {
+                "status": "comment",
+                "message": "참고",
+                "suggestions": ["제안"],
+                "line_comments": [],
+            },
+        }
+    ]
+    assert data["metadata"] == {"key": "value", "path": str(tmp_path)}
+    json.dumps(data, ensure_ascii=False)
