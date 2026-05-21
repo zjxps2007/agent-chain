@@ -187,7 +187,7 @@ def resolve_agents(
     from .agents import (
         SimpleCoderAgent, SimpleReviewerAgent, LLMCoderAgent, LLMReviewerAgent,
         KimiCLICoder, KimiCLIReviewer, CodexCLICoder, CodexCLIReviewer,
-        GeminiCLICoder, GeminiCLIReviewer, ConfigurableCLICoder, ConfigurableCLIReviewer,
+        ConfigurableCLICoder, ConfigurableCLIReviewer,
         AntigravityCLICoder, AntigravityCLIReviewer,
     )
 
@@ -196,7 +196,6 @@ def resolve_agents(
         LLMCoderAgent, LLMReviewerAgent,
         KimiCLICoder, KimiCLIReviewer,
         CodexCLICoder, CodexCLIReviewer,
-        GeminiCLICoder, GeminiCLIReviewer,
         ConfigurableCLICoder, ConfigurableCLIReviewer,
         AntigravityCLICoder, AntigravityCLIReviewer,
     ]
@@ -211,8 +210,6 @@ def resolve_agents(
         "kimi_reviewer": KimiCLIReviewer,
         "codex_coder": CodexCLICoder,
         "codex_reviewer": CodexCLIReviewer,
-        "gemini_coder": GeminiCLICoder,
-        "gemini_reviewer": GeminiCLIReviewer,
         "cli_coder": ConfigurableCLICoder,
         "cli_reviewer": ConfigurableCLIReviewer,
         "generic_cli_coder": ConfigurableCLICoder,

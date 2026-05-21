@@ -1,6 +1,6 @@
 """CLI 기반 에이전트 베이스 클래스.
 
-외부 CLI 도구(kimi, codex, gemini 등)를 subprocess로 호출하고,
+외부 CLI 도구(kimi, codex, antigravity 등)를 subprocess로 호출하고,
 stdout을 파싱하여 AgentChain 파이프라인에 통합합니다.
 """
 

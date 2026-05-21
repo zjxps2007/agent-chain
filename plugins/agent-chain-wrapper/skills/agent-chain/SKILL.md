@@ -10,7 +10,7 @@ Use this skill when the user wants to run AgentChain like a CLI plugin/skill ins
 
 ## What This Skill Does
 
-AgentChain is the orchestrator. External CLIs such as Codex, Kimi, Antigravity, Gemini, Claude,
+AgentChain is the orchestrator. External CLIs such as Codex, Kimi, Antigravity, Claude,
 Aider, or custom tools are workers configured in YAML.
 
 The normal loop is:

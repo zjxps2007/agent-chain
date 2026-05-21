@@ -3,7 +3,6 @@
 from .base import CLICoderBase, CLIReviewerBase
 from .kimi import KimiCLICoder, KimiCLIReviewer
 from .codex import CodexCLICoder, CodexCLIReviewer
-from .gemini import GeminiCLICoder, GeminiCLIReviewer
 from .generic import ConfigurableCLICoder, ConfigurableCLIReviewer
 from .antigravity import AntigravityCLICoder, AntigravityCLIReviewer
 
@@ -14,8 +13,6 @@ __all__ = [
     "KimiCLIReviewer",
     "CodexCLICoder",
     "CodexCLIReviewer",
-    "GeminiCLICoder",
-    "GeminiCLIReviewer",
     "ConfigurableCLICoder",
     "ConfigurableCLIReviewer",
     "AntigravityCLICoder",
