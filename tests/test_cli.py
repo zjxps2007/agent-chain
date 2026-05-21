@@ -10,6 +10,7 @@ def test_short_ac_entrypoint_is_registered() -> None:
 
     assert 'agent-chain = "agent_chain.cli:main"' in text
     assert 'ac = "agent_chain.cli:main"' in text
+    assert 'agc = "agent_chain.cli:main"' in text
 
 
 def test_pair_alias_defaults_to_codex_kimi_config() -> None:

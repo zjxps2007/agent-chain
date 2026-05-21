@@ -79,13 +79,21 @@ ac r -o src/solution.py --json result.json "데이터 처리 파이프라인"
 
 ## 설치 (선택)
 
-`agent-chain`과 짧은 별칭 `ac` 명령어를 글로벌로 등록하려면:
+`agent-chain`과 짧은 별칭 `ac`, `agc` 명령어를 글로벌로 등록하려면:
 
 ```bash
 pip install -e .
 ac r "요청문"
 ac p "요청문" -C codex -R kimi -t src/generated.py
 ac ui
+```
+
+PowerShell에서는 `ac`가 `Add-Content` 내장 alias라서 `agc`를 권장합니다.
+
+```powershell
+agc r "요청문"
+agc p "요청문" -C codex -R kimi -t src/generated.py
+agc ui
 ```
 
 LLM 에이전트(`LLMCoderAgent`, `LLMReviewerAgent`)를 사용하려면 OpenAI SDK 선택 의존성을 설치하고
@@ -107,7 +115,7 @@ pytest
 로컬 웹 대시보드를 실행하면 파이프라인 진행 상황을 이벤트 스트림으로 볼 수 있습니다.
 
 ```powershell
-ac ui
+agc ui
 ```
 
 기본 주소는 `http://127.0.0.1:8787`입니다.
@@ -124,7 +132,7 @@ ac ui
 포트를 바꿀 때:
 
 ```powershell
-ac ui --port 8790
+agc ui --port 8790
 ```
 
 ## 커스텀 에이전트 만들기
