@@ -8,11 +8,12 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
-from .core import Agent, Context, Pipeline
+from .core import Agent, Context, Pipeline, _apply_agent_result, _context_output, _step_output_key
 from .integrations import (
     SUPPORTED_CLIS,
     SUPPORTED_PROFILES,
     build_cli_pair_config,
+    build_cli_review_config,
     uses_generated_cli_config,
 )
 from .pipeline import run_pipeline
@@ -192,6 +193,74 @@ def cmd_run(args: argparse.Namespace) -> None:
         print(f"\n[OK] 전체 결과 JSON 저장: {json_path.resolve()}")
 
 
+def cmd_review(args: argparse.Namespace) -> int:
+    config = build_cli_review_config(
+        reviewer_cli=args.reviewer_cli,
+        max_iterations=1,
+        target_file=args.target_file,
+        reviewer_model=args.reviewer_model,
+        reviewer_command=args.reviewer_command,
+    )
+    plugins_dir = Path(args.plugins_dir) if args.plugins_dir else None
+    agents = resolve_agents(config, plugins_dir=plugins_dir)
+
+    workspace = Path(args.workspace).resolve()
+    env = Environment(workspace, read_only=False)
+    ctx = Context(
+        request=args.request or "Review the current implementation.",
+        workspace=workspace,
+        env=env,
+        language=args.language,
+    )
+    if args.stdin:
+        ctx.code = sys.stdin.read()
+
+    step = config["steps"][0]
+    agent_name = step["agent"]
+    agent = agents[agent_name]
+    output_key = _step_output_key(step)
+    result = agent.run(ctx)
+    ctx, _ = _apply_agent_result(ctx, result, output_key)
+    agent_display_name = getattr(agent, "name", agent_name)
+    ctx.log_step(agent_display_name, step.get("role", "reviewer"), _context_output(ctx, output_key))
+
+    if ctx.review is None:
+        print("오류: 리뷰어가 ReviewResult를 반환하지 않았습니다.")
+        return 2
+
+    ctx.reviews.append(ctx.review)
+    review_data = ctx.review.to_dict()
+    payload = {
+        **review_data,
+        "request": ctx.request,
+        "workspace": str(workspace),
+        "target_file": args.target_file,
+        "reviewer_cli": args.reviewer_cli,
+    }
+
+    print("\n========== 리뷰 결과 ==========")
+    print(f"상태: {ctx.review.status}")
+    print(f"메시지: {ctx.review.message}")
+    if ctx.review.suggestions:
+        print("제안:")
+        for suggestion in ctx.review.suggestions:
+            print(f"  - {suggestion}")
+
+    if args.json:
+        json_path = Path(args.json)
+        if not json_path.is_absolute():
+            json_path = workspace / json_path
+        json_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        print(f"\n[OK] 리뷰 JSON 저장: {json_path.resolve()}")
+
+    if args.fail_on_changes and ctx.review.status == "changes_requested":
+        return 10
+    return 0
+
+
 def cmd_init(args: argparse.Namespace) -> None:
     target = Path(args.path)
     target.mkdir(parents=True, exist_ok=True)
@@ -321,6 +390,74 @@ def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
         max_iterations=3,
     )
 
+    review_parser = subparsers.add_parser(
+        "review",
+        aliases=["v"],
+        help="현재 CLI 세션이 만든 결과를 외부 리뷰어 CLI로 검토합니다.",
+    )
+    review_parser.add_argument(
+        "request",
+        nargs="?",
+        default="Review the current implementation.",
+        help="원래 사용자 요청 또는 리뷰 기준",
+    )
+    review_parser.add_argument(
+        "--reviewer-cli",
+        "-R",
+        choices=SUPPORTED_CLIS,
+        default="kimi",
+        help="리뷰어로 사용할 CLI (기본값: kimi)",
+    )
+    review_parser.add_argument(
+        "--target-file",
+        "-t",
+        default=None,
+        help="리뷰 대상 파일 경로",
+    )
+    review_parser.add_argument(
+        "--reviewer-model",
+        default=None,
+        help="리뷰어 CLI 모델 이름",
+    )
+    review_parser.add_argument(
+        "--reviewer-command",
+        default=None,
+        help="리뷰어 CLI 실행 파일 이름 또는 경로",
+    )
+    review_parser.add_argument(
+        "--workspace",
+        "-w",
+        default=".",
+        help="작업 디렉토리 (기본값: 현재 디렉토리)",
+    )
+    review_parser.add_argument(
+        "-l",
+        "--language",
+        default="python",
+        help="타겟 언어 (기본값: python)",
+    )
+    review_parser.add_argument(
+        "--plugins-dir",
+        default=None,
+        help="추가 에이전트 플러그인 폴더",
+    )
+    review_parser.add_argument(
+        "--stdin",
+        action="store_true",
+        help="리뷰 대상 코드를 stdin에서 읽습니다. --target-file이 없을 때 유용합니다.",
+    )
+    review_parser.add_argument(
+        "--json",
+        default=None,
+        metavar="PATH",
+        help="리뷰 결과 JSON 저장 경로",
+    )
+    review_parser.add_argument(
+        "--fail-on-changes",
+        action="store_true",
+        help="changes_requested이면 exit code 10으로 종료합니다.",
+    )
+
     # init
     init_parser = subparsers.add_parser(
         "init",
@@ -360,6 +497,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command in {"run", "r", "pair", "p"}:
         cmd_run(args)
+    elif args.command in {"review", "v"}:
+        return cmd_review(args)
     elif args.command in {"init", "i"}:
         cmd_init(args)
     elif args.command in {"web", "ui"}:

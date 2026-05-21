@@ -73,3 +73,30 @@ def test_ui_alias_parses() -> None:
     assert args.command == "ui"
     assert args.host == "0.0.0.0"
     assert args.port == 9000
+
+
+def test_review_alias_parses_for_host_session_flow() -> None:
+    parser = build_parser(prog="agc")
+    args = parser.parse_args(
+        [
+            "review",
+            "implement a parser",
+            "-R",
+            "kimi",
+            "-t",
+            "src/generated.py",
+            "-w",
+            "work",
+            "--json",
+            ".agent-chain-review.json",
+            "--fail-on-changes",
+        ]
+    )
+
+    assert args.command == "review"
+    assert args.request == "implement a parser"
+    assert args.reviewer_cli == "kimi"
+    assert args.target_file == "src/generated.py"
+    assert args.workspace == "work"
+    assert args.json == ".agent-chain-review.json"
+    assert args.fail_on_changes is True

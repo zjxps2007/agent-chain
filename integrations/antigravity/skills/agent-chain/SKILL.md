@@ -9,6 +9,16 @@ Use this skill when the user wants AgentChain to coordinate CLI agents.
 
 The `agc` executable must be available on `PATH`. `agent-chain` remains a long-form alias.
 
+## Host-Session Review
+
+When the current CLI session has already edited files, call only the reviewer:
+
+```powershell
+agc review "USER REQUEST" -R kimi -t src/generated.py -w . --json .agent-chain-review.json
+```
+
+Read `.agent-chain-review.json`; apply `changes_requested` feedback and repeat until `approved`.
+
 ## Commands
 
 Antigravity as coder, Kimi as reviewer:

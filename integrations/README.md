@@ -35,6 +35,7 @@ If the Antigravity executable is not named `antigravity`, pass the path through
 Common direct runs:
 
 ```powershell
+agc review "USER REQUEST" -R kimi -t src/generated.py -w . --json .agent-chain-review.json
 agc p "USER REQUEST" -C codex -R kimi -t src/generated.py -w .
 agc p "USER REQUEST" -P codex-antigravity -t src/generated.py -w .
 ```

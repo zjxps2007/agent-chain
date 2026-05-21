@@ -89,6 +89,7 @@ class KimiCLIReviewer(CLIReviewerBase):
             f"- approved: 코드가 양호함\n"
             f"- changes_requested: 수정이 필요함\n"
             f"- suggestions는 반드시 한국어로 작성\n"
+            f"\n[원래 요청]\n{context.request}\n"
         )
 
         if code_snippet:

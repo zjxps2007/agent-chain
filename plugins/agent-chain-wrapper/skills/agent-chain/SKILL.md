@@ -13,6 +13,15 @@ Use this skill when the user wants to run AgentChain like a CLI plugin/skill ins
 AgentChain is the orchestrator. External CLIs such as Codex, Kimi, Antigravity, Claude,
 Aider, or custom tools are workers configured in YAML.
 
+When the current host CLI session is already editing files, prefer reviewer-only mode:
+
+```powershell
+agc review "USER REQUEST" -R kimi -t src/generated.py -w . --json .agent-chain-review.json
+```
+
+Read `.agent-chain-review.json`. If `status` is `changes_requested`, apply `message` and
+`suggestions`, then run `agc review` again. If `status` is `approved`, stop.
+
 The normal loop is:
 
 1. coder step generates or edits code.

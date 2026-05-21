@@ -81,6 +81,44 @@ def build_cli_pair_config(
     return config
 
 
+def build_cli_review_config(
+    *,
+    reviewer_cli: Optional[str] = None,
+    max_iterations: Optional[int] = None,
+    target_file: Optional[str] = None,
+    reviewer_model: Optional[str] = None,
+    reviewer_command: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Build an AgentChain config for a reviewer-only host-session flow."""
+    reviewer_cli = reviewer_cli or "kimi"
+    reviewer_agent = agent_name(reviewer_cli, "reviewer")
+
+    config: Dict[str, Any] = {
+        "max_iterations": max_iterations or 1,
+        "steps": [
+            {
+                "role": "reviewer",
+                "agent": reviewer_agent,
+                "output": "review",
+                "retry_on": [],
+            },
+        ],
+        "agent_configs": {
+            reviewer_agent: {},
+        },
+    }
+
+    reviewer_config = config["agent_configs"][reviewer_agent]
+    if target_file:
+        reviewer_config["target_file"] = target_file
+    if reviewer_model:
+        reviewer_config["model"] = reviewer_model
+    if reviewer_command:
+        reviewer_config["cli_command"] = reviewer_command
+
+    return config
+
+
 def uses_generated_cli_config(
     *,
     profile: Optional[str] = None,

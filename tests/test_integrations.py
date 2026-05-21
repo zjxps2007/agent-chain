@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from agent_chain.integrations import build_cli_pair_config
+from agent_chain.integrations import build_cli_pair_config, build_cli_review_config
 
 
 def test_build_cli_pair_config_from_profile() -> None:
@@ -27,6 +27,27 @@ def test_build_cli_pair_config_from_profile() -> None:
     assert config["agent_configs"]["codex_reviewer"] == {
         "target_file": "src/generated.py",
         "model": "codex-model",
+    }
+
+
+def test_build_cli_review_config_defaults_to_kimi_reviewer() -> None:
+    config = build_cli_review_config(
+        target_file="src/generated.py",
+        reviewer_model="kimi-review",
+    )
+
+    assert config["max_iterations"] == 1
+    assert config["steps"] == [
+        {
+            "role": "reviewer",
+            "agent": "kimi_reviewer",
+            "output": "review",
+            "retry_on": [],
+        }
+    ]
+    assert config["agent_configs"]["kimi_reviewer"] == {
+        "target_file": "src/generated.py",
+        "model": "kimi-review",
     }
 
 
@@ -68,5 +89,6 @@ def test_prebuilt_skill_files_call_agent_chain_binary() -> None:
 
     for path in skill_paths:
         text = path.read_text(encoding="utf-8")
+        assert "agc review" in text
         assert "agc p" in text
         assert "uv run python" not in text

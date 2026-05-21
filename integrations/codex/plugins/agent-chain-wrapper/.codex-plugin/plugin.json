@@ -14,9 +14,9 @@
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],
     "defaultPrompt": [
-      "Run AgentChain with Codex as coder and Kimi as reviewer.",
-      "Use AgentChain to code, review, and revise.",
-      "Create an AgentChain CLI pair for this project."
+      "Use the current Codex session to code, then run AgentChain review with Kimi.",
+      "Review my current changes with AgentChain and Kimi.",
+      "Code in Codex, then use AgentChain reviewer-only mode for this project."
     ]
   }
 }

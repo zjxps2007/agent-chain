@@ -215,6 +215,28 @@ agent_configs:
 
 `command`는 실제 CLI 문법에 맞게 바꾸면 됩니다. 리뷰어 CLI는 JSON(`status`, `message`, `suggestions`)을 출력하면 재시도 게이트로 동작합니다.
 
+## 현재 CLI 세션을 코더로 쓰기
+
+Codex, Kimi, Antigravity 같은 host CLI가 이미 파일을 직접 수정하는 세션이라면 AgentChain이 코더 CLI를 다시 실행할 필요가 없습니다.
+이때는 host CLI가 코딩하고, AgentChain은 외부 리뷰어만 호출합니다.
+
+```powershell
+agc review "요청문" -R kimi -t src/generated.py -w . --json .agent-chain-review.json
+```
+
+권장 루프:
+
+1. 현재 CLI 세션이 직접 파일을 수정합니다.
+2. `agc review ... -R kimi`로 Kimi 리뷰를 실행합니다.
+3. `.agent-chain-review.json`의 `status`가 `changes_requested`이면 `message`와 `suggestions`를 반영해 다시 수정합니다.
+4. `approved`이면 종료합니다.
+
+파일 대신 stdin으로 코드를 넘길 수도 있습니다.
+
+```powershell
+Get-Content src/generated.py -Raw | agc review "요청문" -R kimi --stdin --json .agent-chain-review.json
+```
+
 ## Codex 플러그인/스킬 wrapper
 
 이 repo에는 Codex에서 설치할 수 있는 로컬 플러그인 wrapper가 포함되어 있습니다.
