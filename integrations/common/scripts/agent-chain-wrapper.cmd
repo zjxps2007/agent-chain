@@ -1,2 +1,2 @@
 @echo off
-ac r %*
+agc r %*

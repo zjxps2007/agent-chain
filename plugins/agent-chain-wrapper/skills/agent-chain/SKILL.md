@@ -22,16 +22,16 @@ The normal loop is:
 
 ## Wrapper Command
 
-If AgentChain is installed, prefer the short `ac` command:
+If AgentChain is installed, prefer the short `agc` command:
 
 ```powershell
-ac r "USER REQUEST" -c .\config.yaml -w .
+agc r "USER REQUEST" -c .\config.yaml -w .
 ```
 
-For quick paired CLI runs, use `ac p`:
+For quick paired CLI runs, use `agc p`:
 
 ```powershell
-ac p "USER REQUEST" -C codex -R kimi -t src/generated.py -w .
+agc p "USER REQUEST" -C codex -R kimi -t src/generated.py -w .
 ```
 
 If the package entrypoint is not installed yet, use the repository wrapper script and pass the
@@ -59,7 +59,7 @@ Useful options:
 Use these options when the user wants a quick Codex/Kimi/Antigravity pair without writing config:
 
 ```powershell
-ac p "USER REQUEST" -C codex -R antigravity -t src/generated.py
+agc p "USER REQUEST" -C codex -R antigravity -t src/generated.py
 ```
 
 Supported values:
@@ -71,8 +71,8 @@ Supported values:
 Pair any coder/reviewer:
 
 ```powershell
-ac p "USER REQUEST" -C kimi -R codex -t src/generated.py
-ac p "USER REQUEST" -C antigravity -R kimi -t src/generated.py
+agc p "USER REQUEST" -C kimi -R codex -t src/generated.py
+agc p "USER REQUEST" -C antigravity -R kimi -t src/generated.py
 ```
 
 Optional overrides:

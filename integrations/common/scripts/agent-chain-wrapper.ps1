@@ -21,5 +21,5 @@ if ($ReviewerCli) { $Args += @("-R", $ReviewerCli) }
 if ($TargetFile) { $Args += @("-t", $TargetFile) }
 if ($MaxIterations -gt 0) { $Args += @("-m", [string]$MaxIterations) }
 
-ac @Args
+agc @Args
 exit $LASTEXITCODE

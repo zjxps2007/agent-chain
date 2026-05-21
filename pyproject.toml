@@ -21,7 +21,6 @@ dev = [
 
 [project.scripts]
 agent-chain = "agent_chain.cli:main"
-ac = "agent_chain.cli:main"
 agc = "agent_chain.cli:main"
 
 [tool.setuptools.packages.find]

@@ -16,7 +16,7 @@
 
 ```bash
 pip install -e .
-ac i
+agc i
 ```
 
 `config.yaml`과 `custom_agents.py` 템플릿이 생성됩니다.
@@ -24,20 +24,20 @@ ac i
 ### 2. 파이프라인 실행
 
 ```bash
-ac r "사용자 입력을 검증하는 함수를 작성해줘"
+agc r "사용자 입력을 검증하는 함수를 작성해줘"
 ```
 
 결과를 파일로 저장:
 
 ```bash
-ac r -o result.py "JSON 파서 클래스를 작성해줘"
+agc r -o result.py "JSON 파서 클래스를 작성해줘"
 ```
 
 ## CLI 사용법
 
 ```text
-$ ac --help
-usage: ac [-h] {run,r,pair,p,init,i} ...
+$ agc --help
+usage: agc [-h] {run,r,pair,p,init,i} ...
 
 positional arguments:
   {run,r,pair,p,init,i}
@@ -45,8 +45,8 @@ positional arguments:
     pair (p)      CLI 코더/리뷰어 쌍을 짧게 실행합니다.
     init (i)      프로젝트 초기화 파일을 생성합니다.
 
-$ ac p --help
-usage: ac pair [-h] [-c CONFIG] [--profile PROFILE]
+$ agc p --help
+usage: agc pair [-h] [-c CONFIG] [--profile PROFILE]
                [--coder-cli CLI] [--reviewer-cli CLI] [--target-file PATH]
                [-o OUTPUT] [-l LANGUAGE] [-m MAX_ITERATIONS]
                [--workspace WORKSPACE] [--json PATH] request
@@ -68,31 +68,29 @@ options:
 
 ```bash
 # 커스텀 설정 사용
-ac r -c my-config.yaml -l python "API 클라이언트 작성"
+agc r -c my-config.yaml -l python "API 클라이언트 작성"
 
 # 반복 5회 허용
-ac r -m 5 "복잡한 알고리즘 구현"
+agc r -m 5 "복잡한 알고리즘 구현"
 
 # 결과를 코드와 JSON 동시 저장
-ac r -o src/solution.py --json result.json "데이터 처리 파이프라인"
+agc r -o src/solution.py --json result.json "데이터 처리 파이프라인"
 ```
 
 ## 설치 (선택)
 
-`agent-chain`과 짧은 별칭 `ac`, `agc` 명령어를 글로벌로 등록하려면:
+`agent-chain`과 짧은 별칭 `agc` 명령어를 글로벌로 등록하려면:
 
 ```bash
 pip install -e .
-ac r "요청문"
-ac p "요청문" -C codex -R kimi -t src/generated.py
-ac ui
-```
-
-PowerShell에서는 `ac`가 `Add-Content` 내장 alias라서 `agc`를 권장합니다.
-
-```powershell
 agc r "요청문"
 agc p "요청문" -C codex -R kimi -t src/generated.py
+agc ui
+```
+
+PowerShell 내장 alias와 충돌하지 않도록 AgentChain의 짧은 명령은 `agc`만 사용합니다.
+
+```powershell
 agc ui
 ```
 
@@ -231,7 +229,7 @@ codex plugin add agent-chain-wrapper@agent-chain-local
 패키지를 설치한 환경에서는 짧은 명령을 바로 사용할 수 있습니다.
 
 ```powershell
-ac p "요청문" -C codex -R kimi -t src/generated.py -w .
+agc p "요청문" -C codex -R kimi -t src/generated.py -w .
 ```
 
 wrapper 스크립트를 직접 호출해야 하는 경우에는 해당 프로젝트 경로를 넘깁니다.
@@ -245,9 +243,9 @@ Codex+Antigravity 기본 조합 템플릿은 `plugins/agent-chain-wrapper/config
 Codex/Kimi/Antigravity는 wrapper에서 바로 조합할 수도 있습니다.
 
 ```powershell
-ac p "요청문" -C codex -R antigravity -t src/generated.py
-ac p "요청문" -C kimi -R codex -t src/generated.py
-ac p "요청문" -C antigravity -R kimi -t src/generated.py
+agc p "요청문" -C codex -R antigravity -t src/generated.py
+agc p "요청문" -C kimi -R codex -t src/generated.py
+agc p "요청문" -C antigravity -R kimi -t src/generated.py
 ```
 
 지원하는 built-in CLI worker:
@@ -268,7 +266,7 @@ ac p "요청문" -C antigravity -R kimi -t src/generated.py
 예:
 
 ```powershell
-ac p "요청문" -P kimi-codex -w .
+agc p "요청문" -P kimi-codex -w .
 ```
 
 Kimi를 host CLI로 쓸 때는 같은 skill 디렉터리를 넘길 수 있습니다.

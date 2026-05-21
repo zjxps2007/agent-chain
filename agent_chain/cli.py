@@ -121,7 +121,7 @@ def _load_run_config(args: argparse.Namespace) -> tuple[Dict[str, Any], str]:
     config_path = Path(args.config or "config.yaml")
     if not config_path.exists():
         print(f"설정 파일을 찾을 수 없습니다: {config_path}")
-        print("`ac i` 로 기본 설정을 생성하세요.")
+        print("`agc i` 로 기본 설정을 생성하세요.")
         sys.exit(1)
 
     config = _load_yaml(str(config_path))
@@ -216,8 +216,8 @@ def cmd_init(args: argparse.Namespace) -> None:
         print(f"생성됨: {plugins_dir.resolve()} (플러그인 에이전트를 이곳에 넣으세요)")
 
     print("\n프로젝트 초기화 완료!")
-    print("  ac r \"요청문\"  # 파이프라인 실행")
-    print("  ac r \"요청문\" --plugins-dir ./agents")
+    print("  agc r \"요청문\"  # 파이프라인 실행")
+    print("  agc r \"요청문\" --plugins-dir ./agents")
 
 
 def build_parser(prog: str | None = None) -> argparse.ArgumentParser:

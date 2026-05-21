@@ -68,5 +68,5 @@ def test_prebuilt_skill_files_call_agent_chain_binary() -> None:
 
     for path in skill_paths:
         text = path.read_text(encoding="utf-8")
-        assert "ac p" in text
+        assert "agc p" in text
         assert "uv run python" not in text

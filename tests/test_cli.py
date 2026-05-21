@@ -5,16 +5,15 @@ from pathlib import Path
 from agent_chain.cli import _load_run_config, build_parser
 
 
-def test_short_ac_entrypoint_is_registered() -> None:
+def test_short_agc_entrypoint_is_registered() -> None:
     text = Path("pyproject.toml").read_text(encoding="utf-8")
 
     assert 'agent-chain = "agent_chain.cli:main"' in text
-    assert 'ac = "agent_chain.cli:main"' in text
     assert 'agc = "agent_chain.cli:main"' in text
 
 
 def test_pair_alias_defaults_to_codex_kimi_config() -> None:
-    parser = build_parser(prog="ac")
+    parser = build_parser(prog="agc")
     args = parser.parse_args(["p", "implement a parser"])
 
     assert args.command == "p"
@@ -30,7 +29,7 @@ def test_pair_alias_defaults_to_codex_kimi_config() -> None:
 
 
 def test_run_alias_accepts_short_cli_options() -> None:
-    parser = build_parser(prog="ac")
+    parser = build_parser(prog="agc")
     args = parser.parse_args(
         [
             "r",
@@ -60,7 +59,7 @@ def test_run_alias_accepts_short_cli_options() -> None:
 
 
 def test_init_alias_parses() -> None:
-    parser = build_parser(prog="ac")
+    parser = build_parser(prog="agc")
     args = parser.parse_args(["i", "--path", "demo"])
 
     assert args.command == "i"
@@ -68,7 +67,7 @@ def test_init_alias_parses() -> None:
 
 
 def test_ui_alias_parses() -> None:
-    parser = build_parser(prog="ac")
+    parser = build_parser(prog="agc")
     args = parser.parse_args(["ui", "--host", "0.0.0.0", "--port", "9000"])
 
     assert args.command == "ui"
