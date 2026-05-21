@@ -1,0 +1,15 @@
+max_iterations: 2
+
+steps:
+  - role: coder
+    agent: PluginCoderAgent
+  - role: reviewer
+    agent: strict_reviewer
+
+agent_configs:
+  PluginCoderAgent:
+    target_file: plugin_output.py
+  strict_reviewer:
+    require_docstring: false
+    max_line_length: 200
+    target_file: plugin_output.py

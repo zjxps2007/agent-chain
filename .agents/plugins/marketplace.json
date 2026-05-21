@@ -1,0 +1,20 @@
+{
+  "name": "agent-chain-local",
+  "interface": {
+    "displayName": "AgentChain Local"
+  },
+  "plugins": [
+    {
+      "name": "agent-chain-wrapper",
+      "source": {
+        "source": "local",
+        "path": "./plugins/agent-chain-wrapper"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

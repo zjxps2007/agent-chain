@@ -1,0 +1,13 @@
+max_iterations: 2
+
+steps:
+  - role: coder
+    agent: simple_coder
+  - role: reviewer
+    agent: kimi_reviewer
+
+agent_configs:
+  simple_coder:
+    style: google
+  kimi_reviewer:
+    max_steps: 1
