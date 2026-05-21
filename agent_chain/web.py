@@ -20,6 +20,7 @@ from urllib.parse import urlparse
 
 from .integrations import (
     build_cli_pair_config,
+    build_cli_review_config,
     uses_generated_cli_config,
 )
 from .pipeline import run_pipeline
@@ -114,7 +115,7 @@ class EventEnvironment(Environment):
 
     def run_shell(self, command: Union[str, List[str]]) -> ShellResult:
         if self.read_only:
-            raise PermissionError("현재 Environment는 read-only 모드입니다. 셸 명령을 실행할 수 없습니다.")
+            raise PermissionError("Environment is read-only; shell commands cannot be executed.")
 
         if isinstance(command, str):
             cmd_list = shlex.split(command, posix=(os.name != "nt"))
@@ -197,22 +198,39 @@ def _int_or_none(value: Any) -> Optional[int]:
 
 
 def _build_config(payload: Dict[str, Any]) -> tuple[Dict[str, Any], str]:
+    mode = (_clean_text(payload.get("mode")) or "review").lower()
     config_path = _clean_text(payload.get("config"))
     profile = _clean_text(payload.get("profile"))
     coder_cli = _clean_text(payload.get("coder_cli"))
     reviewer_cli = _clean_text(payload.get("reviewer_cli"))
+
+    if mode == "review":
+        if config_path or profile or coder_cli:
+            raise ValueError("review mode only accepts reviewer options.")
+        reviewer_cli = reviewer_cli or "kimi"
+        config = build_cli_review_config(
+            reviewer_cli=reviewer_cli,
+            max_iterations=1,
+            target_file=_clean_text(payload.get("target_file")),
+            reviewer_model=_clean_text(payload.get("reviewer_model")),
+            reviewer_command=_clean_text(payload.get("reviewer_command")),
+        )
+        return config, f"review:{reviewer_cli}"
+
+    if mode not in {"pair", "config"}:
+        raise ValueError(f"unsupported UI mode: {mode}")
 
     should_generate = uses_generated_cli_config(
         profile=profile,
         coder_cli=coder_cli,
         reviewer_cli=reviewer_cli,
     )
-    if not config_path and not should_generate:
+    if mode == "pair" and not config_path and not should_generate:
         coder_cli = "codex"
         reviewer_cli = "kimi"
         should_generate = True
 
-    if config_path and should_generate:
+    if (mode == "config" or config_path) and should_generate:
         raise ValueError("config mode cannot be combined with profile/coder/reviewer options.")
 
     if should_generate:
@@ -281,6 +299,31 @@ def _run_worker(record: RunRecord, payload: Dict[str, Any]) -> None:
             language=language,
             event_callback=record.emit,
         )
+
+        review_json = _clean_text(payload.get("json"))
+        if review_json and context.review:
+            json_path = Path(review_json)
+            if not json_path.is_absolute():
+                json_path = workspace / json_path
+            json_path.parent.mkdir(parents=True, exist_ok=True)
+            review_payload = {
+                **context.review.to_dict(),
+                "request": context.request,
+                "workspace": str(workspace),
+                "target_file": _clean_text(payload.get("target_file")),
+                "reviewer_cli": _clean_text(payload.get("reviewer_cli")) or "kimi",
+            }
+            json_path.write_text(
+                json.dumps(review_payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            record.emit(
+                "review_json_written",
+                {
+                    "path": str(json_path),
+                    "review": review_payload,
+                },
+            )
 
         record.status = "completed"
         record.result = context.to_dict()
@@ -430,7 +473,7 @@ INDEX_HTML = r"""<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AgentChain UI - Premium Dashboard</title>
+  <title>AgentChain Review Monitor</title>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -439,17 +482,16 @@ INDEX_HTML = r"""<!doctype html>
   <style>
     :root {
       color-scheme: dark;
-      --bg: #090d16;
-      --bg-gradient: radial-gradient(circle at top right, #0f172a, #090d16 60%);
-      --panel: #111827;
-      --panel-glass: rgba(17, 24, 39, 0.75);
+      --bg: #0d0f10;
+      --panel: #171a1c;
+      --panel-glass: rgba(23, 26, 28, 0.78);
       --line: rgba(255, 255, 255, 0.08);
       --text: #f3f4f6;
       --muted: #9ca3af;
       --accent: #06b6d4;
       --accent-hover: #0891b2;
       --accent-bg-glow: rgba(6, 182, 212, 0.15);
-      --accent-2: #6366f1;
+      --accent-2: #7c8a92;
       --warn: #f59e0b;
       --bad: #ef4444;
       --good: #10b981;
@@ -464,11 +506,10 @@ INDEX_HTML = r"""<!doctype html>
       margin: 0;
       min-height: 100vh;
       background: var(--bg);
-      background-image: var(--bg-gradient);
       color: var(--text);
       font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
       line-height: 1.5;
-      letter-spacing: -0.01em;
+      letter-spacing: 0;
       overflow-x: hidden;
     }
 
@@ -511,7 +552,7 @@ INDEX_HTML = r"""<!doctype html>
       font-size: 20px;
       margin: 0;
       font-weight: 800;
-      letter-spacing: -0.02em;
+      letter-spacing: 0;
       background: linear-gradient(to right, #ffffff, #94a3b8);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -873,7 +914,7 @@ INDEX_HTML = r"""<!doctype html>
       display: grid;
       grid-template-columns: 1fr 1fr;
       border-top: 1px solid var(--line);
-      background: #0b1220;
+      background: #101214;
     }
 
     pre {
@@ -881,7 +922,7 @@ INDEX_HTML = r"""<!doctype html>
       height: 100%;
       overflow: auto;
       padding: 16px;
-      background: #070c16;
+      background: #0b0d0f;
       color: #e2e8f0;
       font-family: 'Fira Code', 'JetBrains Mono', ui-monospace, monospace;
       font-size: 12.5px;
@@ -894,7 +935,7 @@ INDEX_HTML = r"""<!doctype html>
     .log {
       border-left: 1px solid var(--line);
       color: #a7f3d0;
-      background: #020617;
+      background: #090b0d;
     }
 
     .muted { color: var(--muted); }
@@ -914,41 +955,21 @@ INDEX_HTML = r"""<!doctype html>
   <header>
     <div class="brand">
       <div class="logo-glow"></div>
-      <h1>AgentChain Dashboard</h1>
+      <h1>AgentChain Review Monitor</h1>
     </div>
     <div id="connection" class="badge">idle</div>
   </header>
   <main>
     <aside>
-      <div class="segmented">
-        <button id="pairMode" class="active" type="button">Pair Mode</button>
-        <button id="configMode" type="button">Config File</button>
-      </div>
       <form id="runForm">
-        <label for="request">Prompt / Request</label>
-        <textarea id="request" required>사용자 입력을 검증하는 함수를 작성해줘</textarea>
+        <label for="request">Original Request</label>
+        <textarea id="request" required>Review the current implementation.</textarea>
 
-        <div id="pairFields">
-          <div class="row">
-            <div>
-              <label for="coder">Coder Agent</label>
-              <select id="coder"></select>
-            </div>
-            <div>
-              <label for="reviewer">Reviewer Agent</label>
-              <select id="reviewer"></select>
-            </div>
-          </div>
-          <label for="profile">Prebuilt Profile</label>
-          <select id="profile"></select>
-          <label for="target">Target File</label>
-          <input id="target" value="src/generated.py">
-        </div>
+        <label for="reviewer">Reviewer Agent</label>
+        <select id="reviewer"></select>
 
-        <div id="configFields" class="hidden">
-          <label for="config">Config Path</label>
-          <input id="config" value="config.yaml">
-        </div>
+        <label for="target">Target File</label>
+        <input id="target" value="src/generated.py">
 
         <div class="row">
           <div>
@@ -962,16 +983,20 @@ INDEX_HTML = r"""<!doctype html>
         </div>
         <div class="row">
           <div>
-            <label for="maxIterations">Max Iterations</label>
-            <input id="maxIterations" type="number" min="1" value="3">
+            <label for="reviewerModel">Reviewer Model</label>
+            <input id="reviewerModel" placeholder="Optional model">
           </div>
           <div>
-            <label for="pluginsDir">Plugins Directory</label>
-            <input id="pluginsDir" placeholder="Optional plugins path">
+            <label for="reviewerCommand">Reviewer Command</label>
+            <input id="reviewerCommand" placeholder="Optional CLI path">
           </div>
         </div>
+        <label for="jsonPath">Review JSON</label>
+        <input id="jsonPath" value=".agent-chain-review.json">
+        <label for="pluginsDir">Plugins Directory</label>
+        <input id="pluginsDir" placeholder="Optional plugins path">
         <div class="controls">
-          <button type="submit">Run Pipeline</button>
+          <button type="submit">Run Review</button>
           <button id="clearButton" class="secondary" type="button">Clear View</button>
         </div>
       </form>
@@ -980,30 +1005,29 @@ INDEX_HTML = r"""<!doctype html>
       <div class="topbar">
         <div class="metric"><span>Status</span><strong id="status">idle</strong></div>
         <div class="metric"><span>Run ID</span><strong id="runId">-</strong></div>
-        <div class="metric"><span>Iteration</span><strong id="iteration">0</strong></div>
+        <div class="metric"><span>Reviewer</span><strong id="reviewerName">-</strong></div>
         <div class="metric"><span>Last Review</span><strong id="reviewStatus">-</strong></div>
         <div class="metric"><span>Events</span><strong id="eventCount">0</strong></div>
       </div>
       <div class="work">
         <div class="panel">
-          <h2>Execution Timeline</h2>
+          <h2>Reviewer Activity</h2>
           <div id="timeline" class="timeline"></div>
         </div>
         <div class="panel">
-          <h2>Code Review Results</h2>
+          <h2>Review Output</h2>
           <div id="review" class="review"><span class="muted">No review feedback received yet.</span></div>
         </div>
       </div>
       <div class="bottom">
-        <pre id="code">// Generated code preview will appear here...</pre>
+        <pre id="result">// Review JSON will appear here...</pre>
         <pre id="log" class="log">// Server execution logs...</pre>
       </div>
     </section>
   </main>
   <script>
     const CLIS = ["codex", "kimi", "antigravity"];
-    const PROFILES = ["", "codex-antigravity", "codex-kimi", "kimi-codex", "kimi-antigravity", "antigravity-codex", "antigravity-kimi"];
-    const state = { mode: "pair", source: null, events: 0, steps: new Map(), startedAt: 0 };
+    const state = { source: null, events: 0, steps: new Map(), startedAt: 0 };
 
     const $ = (id) => document.getElementById(id);
     const log = (line) => {
@@ -1019,62 +1043,43 @@ INDEX_HTML = r"""<!doctype html>
     const option = (value, text = value) => {
       const el = document.createElement("option");
       el.value = value;
-      el.textContent = text || "Manual Pair";
+      el.textContent = text || value;
       return el;
     };
 
     CLIS.forEach((name) => {
-      $("coder").appendChild(option(name));
       $("reviewer").appendChild(option(name));
     });
     $("reviewer").value = "kimi";
-    PROFILES.forEach((name) => $("profile").appendChild(option(name, name || "Manual Pair (custom)")));
-
-    function setMode(mode) {
-      state.mode = mode;
-      $("pairMode").classList.toggle("active", mode === "pair");
-      $("configMode").classList.toggle("active", mode === "config");
-      $("pairFields").classList.toggle("hidden", mode !== "pair");
-      $("configFields").classList.toggle("hidden", mode !== "config");
-    }
-
-    $("pairMode").onclick = () => setMode("pair");
-    $("configMode").onclick = () => setMode("config");
     $("clearButton").onclick = () => {
       if (state.source) state.source.close();
       state.events = 0;
       state.steps.clear();
       $("timeline").textContent = "";
       $("review").innerHTML = '<span class="muted">No review feedback received yet.</span>';
-      $("code").textContent = "// Generated code preview will appear here...";
+      $("result").textContent = "// Review JSON will appear here...";
       $("log").textContent = "// Server execution logs...\n";
       $("status").textContent = "idle";
       $("runId").textContent = "-";
-      $("iteration").textContent = "0";
+      $("reviewerName").textContent = "-";
       $("reviewStatus").textContent = "-";
       $("eventCount").textContent = "0";
       setBadge("connection", "idle");
     };
 
     function payload() {
-      const data = {
+      return {
+        mode: "review",
         request: $("request").value,
         workspace: $("workspace").value,
         language: $("language").value,
-        max_iterations: $("maxIterations").value,
+        reviewer_cli: $("reviewer").value,
+        target_file: $("target").value,
+        reviewer_model: $("reviewerModel").value,
+        reviewer_command: $("reviewerCommand").value,
+        json: $("jsonPath").value,
         plugins_dir: $("pluginsDir").value
       };
-      if (state.mode === "config") {
-        data.config = $("config").value;
-      } else {
-        data.target_file = $("target").value;
-        if ($("profile").value) data.profile = $("profile").value;
-        else {
-          data.coder_cli = $("coder").value;
-          data.reviewer_cli = $("reviewer").value;
-        }
-      }
-      return data;
     }
 
     function stepKey(iteration, agent, role) {
@@ -1107,13 +1112,18 @@ INDEX_HTML = r"""<!doctype html>
       $("reviewStatus").textContent = status;
       const cls = status === "approved" ? "approved" : status === "changes_requested" ? "changes_requested" : "";
       const suggestions = (data.suggestions || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+      const lineComments = (data.line_comments || [])
+        .map((item) => `<li>${escapeHtml(item.line ? `Line ${item.line}: ${item.message || ""}` : item.message || JSON.stringify(item))}</li>`)
+        .join("");
       $("review").innerHTML = `
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
           <span class="badge ${cls}">${escapeHtml(status)}</span>
         </div>
         <div class="message">${escapeHtml(data.message || "")}</div>
         ${suggestions ? `<ul style="margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 12px;">${suggestions}</ul>` : ""}
+        ${lineComments ? `<ul style="margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 12px;">${lineComments}</ul>` : ""}
       `;
+      $("result").textContent = JSON.stringify(data, null, 2);
     }
 
     function escapeHtml(text) {
@@ -1132,42 +1142,45 @@ INDEX_HTML = r"""<!doctype html>
         $("status").textContent = data.status || "running";
         setBadge("connection", data.status || "running", data.status === "completed" ? "approved" : data.status === "running" ? "running" : "");
       } else if (type === "config_loaded") {
-        log(`Loaded configuration profile: ${data.config}`);
+        const step = (data.steps || [])[0] || {};
+        $("reviewerName").textContent = step.agent || data.config || "-";
+        log(`Loaded review configuration: ${data.config}`);
       } else if (type === "agents_resolved") {
         log(`Resolved agents: ${data.agents.join(", ")}`);
       } else if (type === "run_started") {
-        log(`Pipeline run started. Max iterations: ${data.max_iterations}`);
+        log("Review run started.");
       } else if (type === "iteration_started") {
-        $("iteration").textContent = `${data.iteration}/${data.max_iterations}`;
-        log(`Starting iteration ${data.iteration}...`);
+        log(`Starting review pass ${data.iteration}.`);
       } else if (type === "step_started") {
         const key = stepKey(data.iteration, data.agent, data.role);
         state.steps.set(key, { ...data, state: "running" });
+        $("reviewerName").textContent = data.agent || "-";
         renderTimeline();
-        log(`[Step] ${data.role} (${data.agent}) started.`);
+        log(`[Review] ${data.agent} started.`);
       } else if (type === "step_completed") {
         const key = stepKey(data.iteration, data.agent, data.role);
         state.steps.set(key, { ...data, state: "done" });
         renderTimeline();
-        if (data.result && data.result.kind === "text" && data.output === "code") {
-          $("code").textContent = data.result.preview || "";
-        }
         if (data.review) renderReview(data.review);
-        log(`[Step] ${data.role} (${data.agent}) completed successfully.`);
+        log(`[Review] ${data.agent} completed.`);
       } else if (type === "review_gate") {
         renderReview(data);
-        log(`[Review Gate] Status: ${data.status} ${data.retry ? "(Initiating Retry)" : ""}`);
+        log(`[Review Gate] Status: ${data.status}`);
       } else if (type === "retry_scheduled") {
         log(`[Retry] Iteration retry scheduled for loop index: ${data.iteration}`);
       } else if (type === "shell_started") {
         log(`[Shell Exec] ${data.command.join(" ")}`);
       } else if (type === "shell_output") {
         log(`${data.stream}> ${String(data.text).trimEnd()}`);
+      } else if (type === "review_json_written") {
+        $("result").textContent = JSON.stringify(data.review || {}, null, 2);
+        log(`[Review JSON] ${data.path}`);
       } else if (type === "run_completed") {
         $("status").textContent = "completed";
-        if (data.result && data.result.code) $("code").textContent = data.result.code;
+        if (data.review) renderReview(data.review);
+        else if (data.result && data.result.review) renderReview(data.result.review);
         setBadge("connection", "completed", "approved");
-        log("Pipeline execution successfully completed!");
+        log("Review run completed.");
       } else if (type === "run_failed") {
         $("status").textContent = "failed";
         setBadge("connection", "failed", "failed");
@@ -1198,7 +1211,7 @@ INDEX_HTML = r"""<!doctype html>
       state.source.onmessage = (msg) => handleEvent(JSON.parse(msg.data));
       ["server_status", "config_loaded", "agents_resolved", "run_started", "iteration_started",
        "step_started", "step_completed", "review_gate", "retry_scheduled", "shell_started",
-       "shell_output", "shell_completed", "run_completed", "run_failed"].forEach((name) => {
+       "shell_output", "shell_completed", "review_json_written", "run_completed", "run_failed"].forEach((name) => {
         state.source.addEventListener(name, (msg) => handleEvent(JSON.parse(msg.data)));
       });
     };

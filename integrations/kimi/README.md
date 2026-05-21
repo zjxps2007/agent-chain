@@ -13,5 +13,7 @@ The `agc` executable must be on `PATH`. `agent-chain` remains available as the l
 Direct run:
 
 ```powershell
-agc p "USER REQUEST" -C kimi -R codex -t src/generated.py -w .
+agc review "USER REQUEST" -R codex -t src/generated.py -w . --json .agent-chain-review.json
 ```
+
+Use `agc p "USER REQUEST" -C kimi -R codex ...` only when AgentChain should spawn both the Kimi coder and the reviewer.

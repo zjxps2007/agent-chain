@@ -2,17 +2,19 @@
 
 Use this command definition if Antigravity supports custom Markdown commands.
 
-Run AgentChain with the current request:
+Run AgentChain reviewer-only mode after the current Antigravity session edits files:
 
 ```powershell
-agc p "$ARGUMENTS" -C codex -R antigravity -t src/generated.py -w .
+agc review "$ARGUMENTS" -R kimi -t src/generated.py -w . --json .agent-chain-review.json
 ```
 
-Alternative pairs:
+Read `.agent-chain-review.json`, apply `changes_requested` feedback, then run the review again until it returns `approved`.
+
+Alternative reviewers:
 
 ```powershell
-agc p "$ARGUMENTS" -C antigravity -R kimi -t src/generated.py -w .
-agc p "$ARGUMENTS" -C kimi -R antigravity -t src/generated.py -w .
+agc review "$ARGUMENTS" -R codex -t src/generated.py -w . --json .agent-chain-review.json
+agc review "$ARGUMENTS" -R antigravity -t src/generated.py -w . --json .agent-chain-review.json
 ```
 
 The `agc` executable must be on `PATH`. `agent-chain` remains a long-form alias.

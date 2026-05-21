@@ -1,15 +1,15 @@
 {
   "name": "agent-chain-wrapper",
   "version": "0.1.0",
-  "description": "Run AgentChain as a CLI skill-style wrapper for Codex, Kimi, and Antigravity coder/reviewer loops.",
+  "description": "Run AgentChain as a CLI skill-style wrapper for reviewer-only checks from Codex, Kimi, and Antigravity.",
   "author": {
     "name": "AgentChain"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Agent Chain Wrapper",
-    "shortDescription": "Run paired coder/reviewer CLI agent loops.",
-    "longDescription": "Agent Chain Wrapper exposes the AgentChain binary as a CLI skill-style wrapper. It can run Codex, Kimi, Antigravity, or another configured coding CLI with a reviewing CLI, then repeat until the review approves or max iterations are reached.",
+    "shortDescription": "Review current Codex changes with another CLI.",
+    "longDescription": "Agent Chain Wrapper exposes the AgentChain binary as a CLI skill-style wrapper. By default the current Codex session writes code and AgentChain calls a selected external reviewer CLI, then Codex applies feedback and repeats until approved. Fully delegated pairs remain available when explicitly requested.",
     "developerName": "AgentChain",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],

@@ -110,7 +110,9 @@ pytest
 
 ## 실시간 웹 UI
 
-로컬 웹 대시보드를 실행하면 파이프라인 진행 상황을 이벤트 스트림으로 볼 수 있습니다.
+`agc ui`는 review 중심 화면입니다. 현재 CLI 세션이 직접 코딩하고, UI는 외부 reviewer CLI 호출과 그 결과만 실시간으로 보여줍니다.
+
+로컬 웹 대시보드를 실행하면 review 실행 상황을 이벤트 스트림으로 볼 수 있습니다.
 
 ```powershell
 agc ui
@@ -120,12 +122,10 @@ agc ui
 
 웹 UI에서 볼 수 있는 항목:
 
-- iteration/step 진행 상태
-- coder/reviewer 실행 순서
+- reviewer 실행 상태
 - review status, message, suggestions
-- retry 예약 여부
-- 외부 CLI stdout/stderr 스트림
-- 최종 코드와 이벤트 로그
+- line comments와 review JSON
+- 외부 reviewer CLI stdout/stderr 스트림
 
 포트를 바꿀 때:
 

@@ -1,8 +1,9 @@
 """Run AgentChain from a plugin/skill-style wrapper.
 
 The script can be invoked from any workspace. It locates the AgentChain repo
-relative to this plugin, adds it to PYTHONPATH, and executes `agent_chain run`
-with the requested workspace as the working directory.
+relative to this plugin, adds it to PYTHONPATH, and executes AgentChain with
+the requested workspace as the working directory. The default mode is reviewer
+only so the host CLI session can do the coding itself.
 """
 
 from __future__ import annotations
@@ -75,7 +76,7 @@ def _agent_name(cli_name: str, role: str) -> str:
 
 def _write_generated_config(args: argparse.Namespace) -> Path:
     coder_cli = args.coder_cli or "codex"
-    reviewer_cli = args.reviewer_cli or "antigravity"
+    reviewer_cli = args.reviewer_cli or "kimi"
     coder_agent = _agent_name(coder_cli, "coder")
     reviewer_agent = _agent_name(reviewer_cli, "reviewer")
 
@@ -126,7 +127,7 @@ def _select_config(args: argparse.Namespace, workspace: Path, repo_root: Path) -
     if args.config:
         return Path(args.config).resolve(), []
 
-    if args.coder_cli or args.reviewer_cli:
+    if args.pair or args.coder_cli or args.reviewer_cli:
         generated = _write_generated_config(args)
         return generated, [generated]
 
@@ -139,9 +140,42 @@ def _select_config(args: argparse.Namespace, workspace: Path, repo_root: Path) -
     return _default_config(workspace, repo_root), []
 
 
+def _uses_review_mode(args: argparse.Namespace) -> bool:
+    if args.pair or args.config or args.profile or args.coder_cli:
+        return False
+    return True
+
+
 def build_command(args: argparse.Namespace) -> tuple[list[str], Path, dict[str, str], list[Path]]:
     repo_root = _repo_root()
     workspace = Path(args.workspace).resolve()
+
+    if _uses_review_mode(args):
+        command = [
+            _default_python(repo_root),
+            "-m",
+            "agent_chain",
+            "review",
+            args.request,
+            "--reviewer-cli",
+            args.reviewer_cli or "kimi",
+            "--workspace",
+            str(workspace),
+            "--language",
+            args.language,
+        ]
+        if args.target_file:
+            command.extend(["--target-file", args.target_file])
+        if args.reviewer_model:
+            command.extend(["--reviewer-model", args.reviewer_model])
+        if args.reviewer_command:
+            command.extend(["--reviewer-command", args.reviewer_command])
+        if args.json:
+            command.extend(["--json", args.json])
+        if args.plugins_dir:
+            command.extend(["--plugins-dir", str(Path(args.plugins_dir).resolve())])
+        return command, workspace, _env_with_repo(repo_root), []
+
     config, cleanup_paths = _select_config(args, workspace, repo_root)
 
     command = [
@@ -186,19 +220,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--profile",
         choices=SUPPORTED_PROFILES,
         default=None,
-        help="Built-in CLI pair profile to use when --config is omitted.",
+        help="Built-in CLI pair profile to use when --config is omitted. Implies delegated pair mode.",
     )
+    parser.add_argument("--pair", action="store_true", help="Run a delegated coder/reviewer pair.")
     parser.add_argument(
         "--coder-cli",
         choices=SUPPORTED_CLIS,
         default=None,
-        help="Generate a config using this CLI as coder.",
+        help="Generate a delegated config using this CLI as coder. Implies pair mode.",
     )
     parser.add_argument(
         "--reviewer-cli",
         choices=SUPPORTED_CLIS,
         default=None,
-        help="Generate a config using this CLI as reviewer.",
+        help="Use this CLI as reviewer. Defaults to reviewer-only mode unless --pair/--coder-cli is set.",
     )
     parser.add_argument("--target-file", default=None, help="Target file for generated code/review.")
     parser.add_argument("--coder-model", default=None, help="Model name for the coder CLI, when supported.")

@@ -16,5 +16,7 @@ command mechanism. The `agc` executable must be on `PATH`.
 Direct run:
 
 ```powershell
-agc p "USER REQUEST" -C codex -R antigravity -t src/generated.py -w .
+agc review "USER REQUEST" -R kimi -t src/generated.py -w . --json .agent-chain-review.json
 ```
+
+Use `agc p "USER REQUEST" -C antigravity -R kimi ...` only when AgentChain should spawn both the Antigravity coder and the reviewer.

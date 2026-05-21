@@ -74,7 +74,7 @@ agent_configs:
     assert "approved" in result.stdout
 
 
-def test_agent_chain_wrapper_dry_run_resolves_repo_config(tmp_path: Path) -> None:
+def test_agent_chain_wrapper_dry_run_defaults_to_reviewer_only(tmp_path: Path) -> None:
     script = Path("plugins/agent-chain-wrapper/scripts/agent_chain_wrapper.py").resolve()
     result = subprocess.run(
         [
@@ -83,6 +83,8 @@ def test_agent_chain_wrapper_dry_run_resolves_repo_config(tmp_path: Path) -> Non
             "dry run",
             "--workspace",
             str(tmp_path),
+            "--target-file",
+            "src/generated.py",
             "--dry-run",
         ],
         capture_output=True,
@@ -93,7 +95,36 @@ def test_agent_chain_wrapper_dry_run_resolves_repo_config(tmp_path: Path) -> Non
 
     assert result.returncode == 0
     assert "agent_chain" in result.stdout
-    assert "config.yaml" in result.stdout
+    assert " review " in result.stdout
+    assert "--reviewer-cli kimi" in result.stdout
+    assert "--target-file src/generated.py" in result.stdout
+
+
+def test_agent_chain_wrapper_can_force_pair_mode(tmp_path: Path) -> None:
+    wrapper = _load_wrapper_module()
+    args = wrapper.parse_args(
+        [
+            "work on this",
+            "--workspace",
+            str(tmp_path),
+            "--pair",
+            "--target-file",
+            "src/generated.py",
+        ]
+    )
+
+    command, _workspace, _env, cleanup_paths = wrapper.build_command(args)
+    try:
+        config_path = Path(command[command.index("--config") + 1])
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    finally:
+        for path in cleanup_paths:
+            Path(path).unlink(missing_ok=True)
+
+    assert config["steps"] == [
+        {"role": "coder", "agent": "codex_coder", "output": "code"},
+        {"role": "reviewer", "agent": "kimi_reviewer", "output": "review"},
+    ]
 
 
 def test_agent_chain_wrapper_generates_cli_pair_config(tmp_path: Path) -> None:

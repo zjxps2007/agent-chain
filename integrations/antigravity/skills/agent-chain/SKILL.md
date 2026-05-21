@@ -1,17 +1,17 @@
 ---
 name: agent-chain
-description: Use the installed agent-chain binary to run Codex, Kimi, and Antigravity CLI agents as coder/reviewer pairs.
+description: Use the installed agent-chain binary to review code produced by the current Antigravity session, or explicitly run delegated Codex/Kimi/Antigravity pairs.
 ---
 
 # AgentChain
 
-Use this skill when the user wants AgentChain to coordinate CLI agents.
+Use this skill when the current Antigravity session should implement code and an external reviewer CLI should review it.
 
 The `agc` executable must be available on `PATH`. `agent-chain` remains a long-form alias.
 
-## Host-Session Review
+## Preferred Host-Session Review
 
-When the current CLI session has already edited files, call only the reviewer:
+When running inside Antigravity, do not spawn another Antigravity coder by default. First edit the files yourself, then call only the reviewer:
 
 ```powershell
 agc review "USER REQUEST" -R kimi -t src/generated.py -w . --json .agent-chain-review.json
@@ -19,7 +19,9 @@ agc review "USER REQUEST" -R kimi -t src/generated.py -w . --json .agent-chain-r
 
 Read `.agent-chain-review.json`; apply `changes_requested` feedback and repeat until `approved`.
 
-## Commands
+## Delegated Pair Commands
+
+Use these only when the user explicitly asks AgentChain to spawn both CLIs.
 
 Antigravity as coder, Kimi as reviewer:
 

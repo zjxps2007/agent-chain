@@ -1,22 +1,22 @@
 {
   "name": "agent-chain-wrapper",
   "version": "0.1.0",
-  "description": "Run AgentChain as a CLI skill-style wrapper for Codex, Kimi, and Antigravity coder/reviewer loops.",
+  "description": "Run AgentChain as a CLI skill-style wrapper for reviewer-only checks from Codex, Kimi, and Antigravity.",
   "author": {
     "name": "AgentChain"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Agent Chain Wrapper",
-    "shortDescription": "Run paired coder/reviewer CLI agent loops.",
-    "longDescription": "Agent Chain Wrapper exposes this repository's AgentChain runner as a CLI skill-style wrapper. It can run Codex, Kimi, Antigravity, or another configured coding CLI with a reviewing CLI, then repeat until the review approves or max iterations are reached.",
+    "shortDescription": "Review current changes with another CLI.",
+    "longDescription": "Agent Chain Wrapper exposes this repository's AgentChain runner as a CLI skill-style wrapper. By default the current host CLI session writes code and AgentChain calls a selected external reviewer CLI, then the host applies feedback and repeats until approved. Fully delegated pairs remain available when explicitly requested.",
     "developerName": "AgentChain",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],
     "defaultPrompt": [
-      "Run AgentChain with Codex as coder and a CLI reviewer.",
-      "Create an AgentChain config for this project.",
-      "Use AgentChain to code, review, and revise."
+      "Review my current changes with AgentChain and Kimi.",
+      "Use the current CLI session to code, then run AgentChain review.",
+      "Run AgentChain reviewer-only mode for this project."
     ]
   }
 }

@@ -1,2 +1,2 @@
 @echo off
-agc r %*
+agc review %*

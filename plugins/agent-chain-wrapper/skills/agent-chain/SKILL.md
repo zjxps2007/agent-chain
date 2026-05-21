@@ -1,12 +1,11 @@
 ---
 name: agent-chain
-description: Run this repository's AgentChain orchestrator as a Codex/Kimi/Antigravity skill-style wrapper when the user wants two CLI agents to code, review, revise, and repeat.
+description: Run this repository's AgentChain orchestrator as a Codex/Kimi/Antigravity skill-style wrapper, preferring reviewer-only checks for code produced by the current CLI session.
 ---
 
 # AgentChain Wrapper
 
-Use this skill when the user wants to run AgentChain like a CLI plugin/skill instead of calling
-`python -m agent_chain` directly.
+Use this skill when the user wants the current CLI session to code and another CLI to review the result.
 
 ## What This Skill Does
 
@@ -22,22 +21,22 @@ agc review "USER REQUEST" -R kimi -t src/generated.py -w . --json .agent-chain-r
 Read `.agent-chain-review.json`. If `status` is `changes_requested`, apply `message` and
 `suggestions`, then run `agc review` again. If `status` is `approved`, stop.
 
-The normal loop is:
+The host-session loop is:
 
-1. coder step generates or edits code.
-2. reviewer step returns a review.
-3. if review status is `changes_requested`, AgentChain starts the next iteration from the first step.
-4. if review status is `approved`, AgentChain stops.
+1. current CLI session generates or edits code.
+2. `agc review` calls the selected reviewer CLI.
+3. if review status is `changes_requested`, the current CLI applies the feedback.
+4. run `agc review` again until it returns `approved`.
 
 ## Wrapper Command
 
 If AgentChain is installed, prefer the short `agc` command:
 
 ```powershell
-agc r "USER REQUEST" -c .\config.yaml -w .
+agc review "USER REQUEST" -R kimi -t src/generated.py -w . --json .agent-chain-review.json
 ```
 
-For quick paired CLI runs, use `agc p`:
+For fully delegated paired CLI runs, use `agc p` only when explicitly requested:
 
 ```powershell
 agc p "USER REQUEST" -C codex -R kimi -t src/generated.py -w .
@@ -47,15 +46,15 @@ If the package entrypoint is not installed yet, use the repository wrapper scrip
 project workspace explicitly:
 
 ```powershell
-uv run python <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "USER REQUEST" --config <PROJECT_ROOT>\.agent-chain.yaml --workspace <PROJECT_ROOT>
+uv run python <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "USER REQUEST" --reviewer-cli kimi --target-file src/generated.py --workspace <PROJECT_ROOT> --json .agent-chain-review.json
 ```
 
-The wrapper sets `PYTHONPATH` to this repository, runs AgentChain from the target workspace, and
-passes through common AgentChain options.
+The wrapper sets `PYTHONPATH` to this repository, runs AgentChain from the target workspace, and defaults to reviewer-only mode unless `--pair`, `--config`, `--profile`, or `--coder-cli` is supplied.
 
 Useful options:
 
-- `--config PATH`: YAML config. Defaults to the first of `.agent-chain.yaml`, `agent-chain.yaml`, `config.yaml`, or this repo's `config.yaml`.
+- `--config PATH`: YAML config. Supplying this runs full AgentChain config mode.
+- `--pair`: run a delegated coder/reviewer pair.
 - `--workspace PATH`: target workspace. Defaults to the current directory.
 - `--max-iterations N`: override `max_iterations`.
 - `--language NAME`: pass language metadata to agents.
