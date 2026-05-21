@@ -1,0 +1,16 @@
+max_iterations: 3
+
+steps:
+  - role: coder
+    agent: codex_coder
+    output: code
+  - role: reviewer
+    agent: kimi_reviewer
+    output: review
+
+agent_configs:
+  codex_coder:
+    model: gpt-5.4
+    target_file: src/generated.py
+  kimi_reviewer:
+    target_file: src/generated.py

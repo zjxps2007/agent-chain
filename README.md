@@ -232,6 +232,42 @@ Kimi를 host CLI로 쓸 때는 같은 skill 디렉터리를 넘길 수 있습니
 kimi --skills-dir D:\Code\AgentChain\plugins\agent-chain-wrapper\skills --prompt "agent-chain skill로 이 요청을 처리해줘."
 ```
 
+## 사전 생성 integration pack
+
+배포용으로는 `integrations/` 아래의 미리 만들어진 파일을 사용할 수 있습니다. 이 방식은
+`agent-chain` 실행 파일이 PATH에 있다고 가정하고, 각 CLI가 읽는 skill/plugin 파일만 등록합니다.
+
+```text
+integrations/
+  codex/        # Codex local marketplace + plugin
+  kimi/         # Kimi skills-dir
+  antigravity/  # Antigravity skill/command templates
+  common/       # 공통 profile config와 thin wrapper scripts
+```
+
+Codex:
+
+```powershell
+codex plugin marketplace add D:\Code\AgentChain\integrations\codex
+codex plugin add agent-chain-wrapper@agent-chain-local
+```
+
+Kimi:
+
+```powershell
+kimi --skills-dir D:\Code\AgentChain\integrations\kimi\skills --prompt "agent-chain으로 이 요청을 처리해줘."
+```
+
+Antigravity:
+
+```text
+integrations/antigravity/skills
+integrations/antigravity/commands
+```
+
+위 파일들을 Antigravity의 skill/custom-command 경로에 등록하면 됩니다. Antigravity 실행 파일명이 다르면
+`--coder-command` 또는 `--reviewer-command`로 실제 경로를 넘기세요.
+
 ## 아키텍처
 
 ```

@@ -1,0 +1,16 @@
+max_iterations: 3
+
+steps:
+  - role: coder
+    agent: antigravity_coder
+    output: code
+  - role: reviewer
+    agent: codex_reviewer
+    output: review
+
+agent_configs:
+  antigravity_coder:
+    target_file: src/generated.py
+  codex_reviewer:
+    model: gpt-5.4
+    target_file: src/generated.py

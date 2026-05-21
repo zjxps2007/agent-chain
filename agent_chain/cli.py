@@ -9,6 +9,12 @@ from pathlib import Path
 from typing import Any, Dict
 
 from .core import Agent, Context, Pipeline
+from .integrations import (
+    SUPPORTED_CLIS,
+    SUPPORTED_PROFILES,
+    build_cli_pair_config,
+    uses_generated_cli_config,
+)
 from .pipeline import run_pipeline
 from .registry import resolve_agents
 from .tools import Environment
@@ -79,8 +85,32 @@ def _load_yaml(path: str) -> Dict[str, Any]:
         return yaml.safe_load(f)
 
 
-def cmd_run(args: argparse.Namespace) -> None:
-    config_path = Path(args.config)
+def _load_run_config(args: argparse.Namespace) -> tuple[Dict[str, Any], str]:
+    should_generate = uses_generated_cli_config(
+        profile=args.profile,
+        coder_cli=args.coder_cli,
+        reviewer_cli=args.reviewer_cli,
+    )
+    if args.config and should_generate:
+        print("오류: --config는 --profile/--coder-cli/--reviewer-cli와 함께 사용할 수 없습니다.")
+        sys.exit(2)
+
+    if should_generate:
+        config = build_cli_pair_config(
+            profile=args.profile,
+            coder_cli=args.coder_cli,
+            reviewer_cli=args.reviewer_cli,
+            max_iterations=args.max_iterations,
+            target_file=args.target_file,
+            coder_model=args.coder_model,
+            reviewer_model=args.reviewer_model,
+            coder_command=args.coder_command,
+            reviewer_command=args.reviewer_command,
+        )
+        profile_label = args.profile or f"{args.coder_cli or 'codex'}-{args.reviewer_cli or 'antigravity'}"
+        return config, f"generated:{profile_label}"
+
+    config_path = Path(args.config or "config.yaml")
     if not config_path.exists():
         print(f"설정 파일을 찾을 수 없습니다: {config_path}")
         print("`agent-chain init` 로 기본 설정을 생성하세요.")
@@ -89,6 +119,11 @@ def cmd_run(args: argparse.Namespace) -> None:
     config = _load_yaml(str(config_path))
     if args.max_iterations is not None:
         config["max_iterations"] = args.max_iterations
+    return config, str(config_path)
+
+
+def cmd_run(args: argparse.Namespace) -> None:
+    config, config_label = _load_run_config(args)
 
     # 에이전트 동적 로드
     plugins_dir = Path(args.plugins_dir) if args.plugins_dir else None
@@ -102,7 +137,7 @@ def cmd_run(args: argparse.Namespace) -> None:
     env = Environment(workspace, read_only=False)
 
     print(f"요청: {args.request}")
-    print(f"설정: {config_path}")
+    print(f"설정: {config_label}")
     print(f"작업 디렉토리: {workspace}")
     print(f"최대 반복: {config.get('max_iterations', 3)}\n")
 
@@ -188,8 +223,51 @@ def main(argv: list[str] | None = None) -> int:
     run_parser = subparsers.add_parser("run", help="파이프라인을 실행합니다.")
     run_parser.add_argument("request", help="코드 생성 요청 문장")
     run_parser.add_argument(
-        "-c", "--config", default="config.yaml",
+        "-c", "--config", default=None,
         help="파이프라인 설정 파일 (기본값: config.yaml)",
+    )
+    run_parser.add_argument(
+        "--profile",
+        choices=SUPPORTED_PROFILES,
+        default=None,
+        help="내장 CLI 조합 프로필",
+    )
+    run_parser.add_argument(
+        "--coder-cli",
+        choices=SUPPORTED_CLIS,
+        default=None,
+        help="코더로 사용할 CLI",
+    )
+    run_parser.add_argument(
+        "--reviewer-cli",
+        choices=SUPPORTED_CLIS,
+        default=None,
+        help="리뷰어로 사용할 CLI",
+    )
+    run_parser.add_argument(
+        "--target-file",
+        default=None,
+        help="생성/리뷰 대상 파일 경로",
+    )
+    run_parser.add_argument(
+        "--coder-model",
+        default=None,
+        help="코더 CLI 모델 이름",
+    )
+    run_parser.add_argument(
+        "--reviewer-model",
+        default=None,
+        help="리뷰어 CLI 모델 이름",
+    )
+    run_parser.add_argument(
+        "--coder-command",
+        default=None,
+        help="코더 CLI 실행 파일 이름 또는 경로",
+    )
+    run_parser.add_argument(
+        "--reviewer-command",
+        default=None,
+        help="리뷰어 CLI 실행 파일 이름 또는 경로",
     )
     run_parser.add_argument(
         "-o", "--output", default=None,
