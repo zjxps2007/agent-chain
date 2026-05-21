@@ -10,4 +10,11 @@ pack is intentionally file-based:
 - `commands/agent-chain.md`
 
 Copy or register these files according to the Antigravity CLI's custom skill or
-command mechanism. The `agent-chain` executable must be on `PATH`.
+command mechanism. The `ac` executable must be on `PATH`.
+`agent-chain` remains available as the long-form command.
+
+Direct run:
+
+```powershell
+ac p "USER REQUEST" -C codex -R antigravity -t src/generated.py -w .
+```

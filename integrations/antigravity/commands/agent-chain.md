@@ -5,14 +5,14 @@ Use this command definition if Antigravity supports custom Markdown commands.
 Run AgentChain with the current request:
 
 ```powershell
-agent-chain run "$ARGUMENTS" --coder-cli codex --reviewer-cli antigravity --target-file src/generated.py --workspace .
+ac p "$ARGUMENTS" -C codex -R antigravity -t src/generated.py -w .
 ```
 
 Alternative pairs:
 
 ```powershell
-agent-chain run "$ARGUMENTS" --coder-cli antigravity --reviewer-cli kimi --target-file src/generated.py --workspace .
-agent-chain run "$ARGUMENTS" --coder-cli kimi --reviewer-cli antigravity --target-file src/generated.py --workspace .
+ac p "$ARGUMENTS" -C antigravity -R kimi -t src/generated.py -w .
+ac p "$ARGUMENTS" -C kimi -R antigravity -t src/generated.py -w .
 ```
 
-The `agent-chain` executable must be on `PATH`.
+The `ac` executable must be on `PATH`. `agent-chain` remains a long-form alias.

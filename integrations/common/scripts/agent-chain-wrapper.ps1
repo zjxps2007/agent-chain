@@ -13,13 +13,13 @@ param(
     [int]$MaxIterations = 0
 )
 
-$Args = @("run", $Request, "--workspace", $Workspace)
+$Args = @("r", $Request, "-w", $Workspace)
 
-if ($Profile) { $Args += @("--profile", $Profile) }
-if ($CoderCli) { $Args += @("--coder-cli", $CoderCli) }
-if ($ReviewerCli) { $Args += @("--reviewer-cli", $ReviewerCli) }
-if ($TargetFile) { $Args += @("--target-file", $TargetFile) }
-if ($MaxIterations -gt 0) { $Args += @("--max-iterations", [string]$MaxIterations) }
+if ($Profile) { $Args += @("-P", $Profile) }
+if ($CoderCli) { $Args += @("-C", $CoderCli) }
+if ($ReviewerCli) { $Args += @("-R", $ReviewerCli) }
+if ($TargetFile) { $Args += @("-t", $TargetFile) }
+if ($MaxIterations -gt 0) { $Args += @("-m", [string]$MaxIterations) }
 
-agent-chain @Args
+ac @Args
 exit $LASTEXITCODE

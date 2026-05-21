@@ -15,7 +15,8 @@
 ### 1. 프로젝트 초기화
 
 ```bash
-python -m agent_chain init
+pip install -e .
+ac i
 ```
 
 `config.yaml`과 `custom_agents.py` 템플릿이 생성됩니다.
@@ -23,33 +24,40 @@ python -m agent_chain init
 ### 2. 파이프라인 실행
 
 ```bash
-python -m agent_chain run "사용자 입력을 검증하는 함수를 작성해줘"
+ac r "사용자 입력을 검증하는 함수를 작성해줘"
 ```
 
 결과를 파일로 저장:
 
 ```bash
-python -m agent_chain run -o result.py "JSON 파서 클래스를 작성해줘"
+ac r -o result.py "JSON 파서 클래스를 작성해줘"
 ```
 
 ## CLI 사용법
 
 ```text
-$ python -m agent_chain --help
-usage: agent-chain [-h] {run,init} ...
+$ ac --help
+usage: ac [-h] {run,r,pair,p,init,i} ...
 
 positional arguments:
-  {run,init}
-    run       파이프라인을 실행합니다.
-    init      프로젝트 초기화 파일을 생성합니다.
+  {run,r,pair,p,init,i}
+    run (r)       파이프라인을 실행합니다.
+    pair (p)      CLI 코더/리뷰어 쌍을 짧게 실행합니다.
+    init (i)      프로젝트 초기화 파일을 생성합니다.
 
-$ python -m agent_chain run --help
-usage: agent-chain run [-h] [-c CONFIG] [-o OUTPUT] [-l LANGUAGE]
-                       [-m MAX_ITERATIONS] [--json PATH]
-                       request
+$ ac p --help
+usage: ac pair [-h] [-c CONFIG] [--profile PROFILE]
+               [--coder-cli CLI] [--reviewer-cli CLI] [--target-file PATH]
+               [-o OUTPUT] [-l LANGUAGE] [-m MAX_ITERATIONS]
+               [--workspace WORKSPACE] [--json PATH] request
 
 options:
   -c, --config            설정 파일 (기본값: config.yaml)
+  -C, --coder-cli         코더 CLI
+  -R, --reviewer-cli      리뷰어 CLI
+  -P, --profile           내장 CLI 조합 프로필
+  -t, --target-file       생성/리뷰 대상 파일
+  -w, --workspace         작업 디렉토리
   -o, --output            생성된 코드 저장 파일
   -l, --language          타겟 언어 (기본값: python)
   -m, --max-iterations    최대 반복 횟수 오버라이드
@@ -60,22 +68,23 @@ options:
 
 ```bash
 # 커스텀 설정 사용
-python -m agent_chain run -c my-config.yaml -l python "API 클라이언트 작성"
+ac r -c my-config.yaml -l python "API 클라이언트 작성"
 
 # 반복 5회 허용
-python -m agent_chain run -m 5 "복잡한 알고리즘 구현"
+ac r -m 5 "복잡한 알고리즘 구현"
 
 # 결과를 코드와 JSON 동시 저장
-python -m agent_chain run -o src/solution.py --json result.json "데이터 처리 파이프라인"
+ac r -o src/solution.py --json result.json "데이터 처리 파이프라인"
 ```
 
 ## 설치 (선택)
 
-`agent-chain` 명령어를 글로벌로 등록하려면:
+`agent-chain`과 짧은 별칭 `ac` 명령어를 글로벌로 등록하려면:
 
 ```bash
 pip install -e .
-agent-chain run "요청문"
+ac r "요청문"
+ac p "요청문" -C codex -R kimi -t src/generated.py
 ```
 
 LLM 에이전트(`LLMCoderAgent`, `LLMReviewerAgent`)를 사용하려면 OpenAI SDK 선택 의존성을 설치하고
@@ -185,11 +194,13 @@ codex plugin add agent-chain-wrapper@agent-chain-local
 
 설치 후 Codex가 `agent-chain` 스킬을 사용할 수 있고, 실제 실행은 wrapper 스크립트가 담당합니다.
 
+패키지를 설치한 환경에서는 짧은 명령을 바로 사용할 수 있습니다.
+
 ```powershell
-uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "요청문" --config .\config.yaml --workspace .
+ac p "요청문" -C codex -R kimi -t src/generated.py -w .
 ```
 
-다른 프로젝트를 대상으로 실행할 때는 해당 프로젝트 경로를 넘깁니다.
+wrapper 스크립트를 직접 호출해야 하는 경우에는 해당 프로젝트 경로를 넘깁니다.
 
 ```powershell
 uv run python <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "요청문" --config <PROJECT_ROOT>\.agent-chain.yaml --workspace <PROJECT_ROOT>
@@ -200,9 +211,9 @@ Codex+Antigravity 기본 조합 템플릿은 `plugins/agent-chain-wrapper/config
 Codex/Kimi/Antigravity는 wrapper에서 바로 조합할 수도 있습니다.
 
 ```powershell
-uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "요청문" --coder-cli codex --reviewer-cli antigravity --target-file src/generated.py
-uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "요청문" --coder-cli kimi --reviewer-cli codex --target-file src/generated.py
-uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "요청문" --coder-cli antigravity --reviewer-cli kimi --target-file src/generated.py
+ac p "요청문" -C codex -R antigravity -t src/generated.py
+ac p "요청문" -C kimi -R codex -t src/generated.py
+ac p "요청문" -C antigravity -R kimi -t src/generated.py
 ```
 
 지원하는 built-in CLI worker:
@@ -223,7 +234,7 @@ uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "요�
 예:
 
 ```powershell
-uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "요청문" --profile kimi-codex --workspace .
+ac p "요청문" -P kimi-codex -w .
 ```
 
 Kimi를 host CLI로 쓸 때는 같은 skill 디렉터리를 넘길 수 있습니다.

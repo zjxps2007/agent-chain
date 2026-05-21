@@ -73,6 +73,14 @@ class MyReviewerAgent:
 '''
 
 
+def _configure_stdio() -> None:
+    """Keep CLI output from crashing on Windows legacy code pages."""
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if stream and hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def _load_yaml(path: str) -> Dict[str, Any]:
     try:
         import yaml
@@ -113,7 +121,7 @@ def _load_run_config(args: argparse.Namespace) -> tuple[Dict[str, Any], str]:
     config_path = Path(args.config or "config.yaml")
     if not config_path.exists():
         print(f"설정 파일을 찾을 수 없습니다: {config_path}")
-        print("`agent-chain init` 로 기본 설정을 생성하세요.")
+        print("`ac i` 로 기본 설정을 생성하세요.")
         sys.exit(1)
 
     config = _load_yaml(str(config_path))
@@ -208,104 +216,133 @@ def cmd_init(args: argparse.Namespace) -> None:
         print(f"생성됨: {plugins_dir.resolve()} (플러그인 에이전트를 이곳에 넣으세요)")
 
     print("\n프로젝트 초기화 완료!")
-    print("  agent-chain run \"요청문\"  # 파이프라인 실행")
-    print("  agent-chain run \"요청문\" --plugins-dir ./agents")
+    print("  ac r \"요청문\"  # 파이프라인 실행")
+    print("  ac r \"요청문\" --plugins-dir ./agents")
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="agent-chain",
+        prog=prog,
         description="AgentChain: 범용 에이전트 코딩-검토 파이프라인",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    def add_run_arguments(run_parser: argparse.ArgumentParser) -> None:
+        run_parser.add_argument("request", help="코드 생성 요청 문장")
+        run_parser.add_argument(
+            "-c", "--config", default=None,
+            help="파이프라인 설정 파일 (기본값: config.yaml)",
+        )
+        run_parser.add_argument(
+            "--profile",
+            "-P",
+            choices=SUPPORTED_PROFILES,
+            default=None,
+            help="내장 CLI 조합 프로필",
+        )
+        run_parser.add_argument(
+            "--coder-cli",
+            "-C",
+            choices=SUPPORTED_CLIS,
+            default=None,
+            help="코더로 사용할 CLI",
+        )
+        run_parser.add_argument(
+            "--reviewer-cli",
+            "-R",
+            choices=SUPPORTED_CLIS,
+            default=None,
+            help="리뷰어로 사용할 CLI",
+        )
+        run_parser.add_argument(
+            "--target-file",
+            "-t",
+            default=None,
+            help="생성/리뷰 대상 파일 경로",
+        )
+        run_parser.add_argument(
+            "--coder-model",
+            default=None,
+            help="코더 CLI 모델 이름",
+        )
+        run_parser.add_argument(
+            "--reviewer-model",
+            default=None,
+            help="리뷰어 CLI 모델 이름",
+        )
+        run_parser.add_argument(
+            "--coder-command",
+            default=None,
+            help="코더 CLI 실행 파일 이름 또는 경로",
+        )
+        run_parser.add_argument(
+            "--reviewer-command",
+            default=None,
+            help="리뷰어 CLI 실행 파일 이름 또는 경로",
+        )
+        run_parser.add_argument(
+            "-o", "--output", default=None,
+            help="생성된 코드를 저장할 파일 경로 (상대경로는 workspace 기준)",
+        )
+        run_parser.add_argument(
+            "-l", "--language", default="python",
+            help="타겟 언어 (기본값: python)",
+        )
+        run_parser.add_argument(
+            "-m", "--max-iterations", type=int, default=None,
+            help="최대 반복 횟수 (설정 파일 오버라이드)",
+        )
+        run_parser.add_argument(
+            "--plugins-dir", default=None,
+            help="추가 에이전트 플러그인 폴더",
+        )
+        run_parser.add_argument(
+            "--workspace", "-w", default=".",
+            help="작업 디렉토리 (기본값: 현재 디렉토리)",
+        )
+        run_parser.add_argument(
+            "--json", default=None, metavar="PATH",
+            help="전체 실행 결과를 JSON으로 저장",
+        )
+
     # run
-    run_parser = subparsers.add_parser("run", help="파이프라인을 실행합니다.")
-    run_parser.add_argument("request", help="코드 생성 요청 문장")
-    run_parser.add_argument(
-        "-c", "--config", default=None,
-        help="파이프라인 설정 파일 (기본값: config.yaml)",
+    run_parser = subparsers.add_parser("run", aliases=["r"], help="파이프라인을 실행합니다.")
+    add_run_arguments(run_parser)
+    pair_parser = subparsers.add_parser(
+        "pair",
+        aliases=["p"],
+        help="CLI 코더/리뷰어 쌍을 짧게 실행합니다.",
     )
-    run_parser.add_argument(
-        "--profile",
-        choices=SUPPORTED_PROFILES,
-        default=None,
-        help="내장 CLI 조합 프로필",
-    )
-    run_parser.add_argument(
-        "--coder-cli",
-        choices=SUPPORTED_CLIS,
-        default=None,
-        help="코더로 사용할 CLI",
-    )
-    run_parser.add_argument(
-        "--reviewer-cli",
-        choices=SUPPORTED_CLIS,
-        default=None,
-        help="리뷰어로 사용할 CLI",
-    )
-    run_parser.add_argument(
-        "--target-file",
-        default=None,
-        help="생성/리뷰 대상 파일 경로",
-    )
-    run_parser.add_argument(
-        "--coder-model",
-        default=None,
-        help="코더 CLI 모델 이름",
-    )
-    run_parser.add_argument(
-        "--reviewer-model",
-        default=None,
-        help="리뷰어 CLI 모델 이름",
-    )
-    run_parser.add_argument(
-        "--coder-command",
-        default=None,
-        help="코더 CLI 실행 파일 이름 또는 경로",
-    )
-    run_parser.add_argument(
-        "--reviewer-command",
-        default=None,
-        help="리뷰어 CLI 실행 파일 이름 또는 경로",
-    )
-    run_parser.add_argument(
-        "-o", "--output", default=None,
-        help="생성된 코드를 저장할 파일 경로 (상대경로는 workspace 기준)",
-    )
-    run_parser.add_argument(
-        "-l", "--language", default="python",
-        help="타겟 언어 (기본값: python)",
-    )
-    run_parser.add_argument(
-        "-m", "--max-iterations", type=int, default=None,
-        help="최대 반복 횟수 (설정 파일 오버라이드)",
-    )
-    run_parser.add_argument(
-        "--plugins-dir", default=None,
-        help="추가 에이전트 플러그인 폴더",
-    )
-    run_parser.add_argument(
-        "--workspace", default=".",
-        help="작업 디렉토리 (기본값: 현재 디렉토리)",
-    )
-    run_parser.add_argument(
-        "--json", default=None, metavar="PATH",
-        help="전체 실행 결과를 JSON으로 저장",
+    add_run_arguments(pair_parser)
+    pair_parser.set_defaults(
+        profile=None,
+        coder_cli="codex",
+        reviewer_cli="kimi",
+        max_iterations=3,
     )
 
     # init
-    init_parser = subparsers.add_parser("init", help="프로젝트 초기화 파일을 생성합니다.")
+    init_parser = subparsers.add_parser(
+        "init",
+        aliases=["i"],
+        help="프로젝트 초기화 파일을 생성합니다.",
+    )
     init_parser.add_argument(
         "--path", default=".",
         help="초기화할 디렉토리 (기본값: 현재 디렉토리)",
     )
 
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    _configure_stdio()
+    parser = build_parser()
     args = parser.parse_args(argv)
 
-    if args.command == "run":
+    if args.command in {"run", "r", "pair", "p"}:
         cmd_run(args)
-    elif args.command == "init":
+    elif args.command in {"init", "i"}:
         cmd_init(args)
 
     return 0

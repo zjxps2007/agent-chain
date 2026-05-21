@@ -3,7 +3,8 @@
 These directories are prebuilt files for registering AgentChain with external
 CLI hosts.
 
-The `agent-chain` executable must be installed and available on `PATH`.
+The `ac` executable must be installed and available on `PATH`.
+`agent-chain` remains available as the long-form command.
 
 ## Codex
 
@@ -30,3 +31,10 @@ registration mechanism.
 
 If the Antigravity executable is not named `antigravity`, pass the path through
 `--coder-command` or `--reviewer-command`.
+
+Common direct runs:
+
+```powershell
+ac p "USER REQUEST" -C codex -R kimi -t src/generated.py -w .
+ac p "USER REQUEST" -P codex-antigravity -t src/generated.py -w .
+```

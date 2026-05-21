@@ -22,13 +22,20 @@ The normal loop is:
 
 ## Wrapper Command
 
-From this repository, prefer the wrapper script:
+If AgentChain is installed, prefer the short `ac` command:
 
 ```powershell
-uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "USER REQUEST" --config .\config.yaml --workspace .
+ac r "USER REQUEST" -c .\config.yaml -w .
 ```
 
-For another project workspace, pass that workspace explicitly:
+For quick paired CLI runs, use `ac p`:
+
+```powershell
+ac p "USER REQUEST" -C codex -R kimi -t src/generated.py -w .
+```
+
+If the package entrypoint is not installed yet, use the repository wrapper script and pass the
+project workspace explicitly:
 
 ```powershell
 uv run python <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "USER REQUEST" --config <PROJECT_ROOT>\.agent-chain.yaml --workspace <PROJECT_ROOT>
@@ -52,7 +59,7 @@ Useful options:
 Use these options when the user wants a quick Codex/Kimi/Antigravity pair without writing config:
 
 ```powershell
-uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "USER REQUEST" --coder-cli codex --reviewer-cli antigravity --target-file src/generated.py
+ac p "USER REQUEST" -C codex -R antigravity -t src/generated.py
 ```
 
 Supported values:
@@ -64,8 +71,8 @@ Supported values:
 Pair any coder/reviewer:
 
 ```powershell
-uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "USER REQUEST" --coder-cli kimi --reviewer-cli codex --target-file src/generated.py
-uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "USER REQUEST" --coder-cli antigravity --reviewer-cli kimi --target-file src/generated.py
+ac p "USER REQUEST" -C kimi -R codex -t src/generated.py
+ac p "USER REQUEST" -C antigravity -R kimi -t src/generated.py
 ```
 
 Optional overrides:

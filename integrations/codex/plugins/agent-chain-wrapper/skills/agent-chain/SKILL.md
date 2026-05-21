@@ -7,32 +7,32 @@ description: Use the installed agent-chain binary to run paired CLI agents such 
 
 Use this skill when the user wants a coder CLI and reviewer CLI to work together.
 
-The `agent-chain` executable must be available on `PATH`.
+The `ac` executable must be available on `PATH`. `agent-chain` remains a long-form alias.
 
 ## Preferred Commands
 
 Codex as coder, Kimi as reviewer:
 
 ```powershell
-agent-chain run "USER REQUEST" --coder-cli codex --reviewer-cli kimi --target-file src/generated.py --workspace .
+ac p "USER REQUEST" -C codex -R kimi -t src/generated.py -w .
 ```
 
 Kimi as coder, Codex as reviewer:
 
 ```powershell
-agent-chain run "USER REQUEST" --coder-cli kimi --reviewer-cli codex --target-file src/generated.py --workspace .
+ac p "USER REQUEST" -C kimi -R codex -t src/generated.py -w .
 ```
 
 Antigravity as reviewer:
 
 ```powershell
-agent-chain run "USER REQUEST" --coder-cli codex --reviewer-cli antigravity --target-file src/generated.py --workspace .
+ac p "USER REQUEST" -C codex -R antigravity -t src/generated.py -w .
 ```
 
 Profiles are available when the user does not need custom options:
 
 ```powershell
-agent-chain run "USER REQUEST" --profile codex-kimi --target-file src/generated.py --workspace .
+ac p "USER REQUEST" -P codex-kimi -t src/generated.py -w .
 ```
 
 Supported profile names:
@@ -49,7 +49,7 @@ Supported profile names:
 If a CLI executable is not named `codex`, `kimi`, or `antigravity`, pass its path:
 
 ```powershell
-agent-chain run "USER REQUEST" --coder-cli codex --reviewer-cli antigravity --reviewer-command <ANTIGRAVITY_EXE>
+ac p "USER REQUEST" -C codex -R antigravity --reviewer-command <ANTIGRAVITY_EXE>
 ```
 
 The reviewer should return JSON with `status`, `message`, and `suggestions`.

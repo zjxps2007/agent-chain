@@ -11,32 +11,32 @@ Use this skill when the user wants two CLI agents to alternate:
 2. reviewer CLI reviews and returns feedback.
 3. AgentChain repeats until the review is approved or max iterations are reached.
 
-The `agent-chain` executable must be available on `PATH`.
+The `ac` executable must be available on `PATH`. `agent-chain` remains a long-form alias.
 
 ## Commands
 
 Kimi as coder, Codex as reviewer:
 
 ```powershell
-agent-chain run "USER REQUEST" --coder-cli kimi --reviewer-cli codex --target-file src/generated.py --workspace .
+ac p "USER REQUEST" -C kimi -R codex -t src/generated.py -w .
 ```
 
 Codex as coder, Kimi as reviewer:
 
 ```powershell
-agent-chain run "USER REQUEST" --coder-cli codex --reviewer-cli kimi --target-file src/generated.py --workspace .
+ac p "USER REQUEST" -C codex -R kimi -t src/generated.py -w .
 ```
 
 Antigravity as reviewer:
 
 ```powershell
-agent-chain run "USER REQUEST" --coder-cli kimi --reviewer-cli antigravity --target-file src/generated.py --workspace .
+ac p "USER REQUEST" -C kimi -R antigravity -t src/generated.py -w .
 ```
 
 ## Profiles
 
 ```powershell
-agent-chain run "USER REQUEST" --profile kimi-codex --target-file src/generated.py --workspace .
+ac p "USER REQUEST" -P kimi-codex -t src/generated.py -w .
 ```
 
 Supported profiles:
