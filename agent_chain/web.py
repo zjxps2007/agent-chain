@@ -430,255 +430,523 @@ INDEX_HTML = r"""<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AgentChain UI</title>
+  <title>AgentChain UI - Premium Dashboard</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
   <style>
     :root {
-      color-scheme: light;
-      --bg: #f5f7fa;
-      --panel: #ffffff;
-      --line: #d9e0e8;
-      --text: #18212f;
-      --muted: #657386;
-      --accent: #0f766e;
-      --accent-2: #2563eb;
-      --warn: #b45309;
-      --bad: #b91c1c;
-      --good: #15803d;
-      --shadow: 0 1px 2px rgba(15, 23, 42, .06);
+      color-scheme: dark;
+      --bg: #090d16;
+      --bg-gradient: radial-gradient(circle at top right, #0f172a, #090d16 60%);
+      --panel: #111827;
+      --panel-glass: rgba(17, 24, 39, 0.75);
+      --line: rgba(255, 255, 255, 0.08);
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --accent: #06b6d4;
+      --accent-hover: #0891b2;
+      --accent-bg-glow: rgba(6, 182, 212, 0.15);
+      --accent-2: #6366f1;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --good: #10b981;
+      --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      --shadow-neon: 0 0 15px rgba(6, 182, 212, 0.35);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       min-height: 100vh;
       background: var(--bg);
+      background-image: var(--bg-gradient);
       color: var(--text);
-      font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      letter-spacing: 0;
+      font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+      line-height: 1.5;
+      letter-spacing: -0.01em;
+      overflow-x: hidden;
     }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+
     header {
-      height: 56px;
+      height: 64px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 18px;
+      padding: 0 24px;
       border-bottom: 1px solid var(--line);
-      background: var(--panel);
+      background: rgba(17, 24, 39, 0.6);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    h1 { font-size: 17px; margin: 0; font-weight: 650; }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-glow {
+      width: 10px;
+      height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      margin: 0;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #ffffff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
     main {
-      height: calc(100vh - 56px);
+      height: calc(100vh - 64px);
       display: grid;
-      grid-template-columns: 360px minmax(480px, 1fr);
+      grid-template-columns: 380px minmax(500px, 1fr);
       gap: 0;
     }
+
     aside {
-      overflow: auto;
+      overflow-y: auto;
       border-right: 1px solid var(--line);
-      background: #fbfcfe;
-      padding: 16px;
+      background: rgba(13, 18, 30, 0.45);
+      backdrop-filter: blur(10px);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
+
     section {
       min-width: 0;
       overflow: hidden;
       display: grid;
-      grid-template-rows: auto minmax(240px, 1fr) 260px;
+      grid-template-rows: auto minmax(280px, 1fr) 300px;
+      background: rgba(15, 23, 42, 0.1);
     }
+
     label {
       display: block;
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
-      margin: 13px 0 6px;
-      font-weight: 620;
+      margin: 16px 0 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
+
     input, textarea, select {
       width: 100%;
       border: 1px solid var(--line);
-      border-radius: 6px;
-      background: #fff;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.6);
       color: var(--text);
-      padding: 9px 10px;
+      padding: 10px 14px;
       font: inherit;
-      min-height: 36px;
+      font-size: 13.5px;
+      min-height: 40px;
+      transition: var(--transition);
     }
-    textarea { min-height: 112px; resize: vertical; }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-bg-glow), 0 0 8px rgba(6, 182, 212, 0.2);
+      background: rgba(15, 23, 42, 0.8);
+    }
+
+    textarea { min-height: 120px; resize: vertical; }
+
     button {
-      border: 1px solid #0b5f59;
-      border-radius: 6px;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
       background: var(--accent);
-      color: white;
-      min-height: 38px;
-      padding: 0 14px;
+      color: #090d16;
+      min-height: 40px;
+      padding: 0 20px;
+      font-family: 'Inter', sans-serif;
       font-weight: 700;
+      font-size: 14px;
       cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
     }
+
+    button:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(6, 182, 212, 0.35);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
     button.secondary {
-      background: white;
+      background: transparent;
       color: var(--text);
       border-color: var(--line);
+      box-shadow: none;
     }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .controls { display: flex; gap: 8px; margin-top: 14px; }
+
+    button.secondary:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .controls { display: flex; gap: 10px; margin-top: 20px; }
+
     .segmented {
       display: grid;
       grid-template-columns: 1fr 1fr;
       border: 1px solid var(--line);
-      border-radius: 6px;
+      border-radius: 8px;
       overflow: hidden;
-      background: #fff;
+      background: rgba(15, 23, 42, 0.4);
+      padding: 3px;
     }
+
     .segmented button {
       border: 0;
-      border-radius: 0;
+      border-radius: 6px;
       background: transparent;
       color: var(--muted);
+      min-height: 34px;
+      font-weight: 600;
+      font-size: 13px;
+      box-shadow: none;
     }
-    .segmented button.active { background: #e7f4f2; color: #075e57; }
+
+    .segmented button:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      transform: none;
+    }
+
+    .segmented button.active {
+      background: var(--accent);
+      color: #090d16;
+      box-shadow: 0 2px 8px rgba(6, 182, 212, 0.25);
+    }
+
+    .segmented button.active:hover {
+      background: var(--accent);
+      color: #090d16;
+    }
+
     .topbar {
       display: grid;
-      grid-template-columns: repeat(5, minmax(110px, 1fr));
-      gap: 10px;
-      padding: 14px 16px;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 12px;
+      padding: 16px 24px;
       border-bottom: 1px solid var(--line);
-      background: var(--panel);
+      background: rgba(17, 24, 39, 0.4);
+      backdrop-filter: blur(12px);
     }
+
     .metric {
       border: 1px solid var(--line);
-      border-radius: 6px;
-      background: #fff;
-      padding: 9px 10px;
+      border-radius: 10px;
+      background: rgba(30, 41, 59, 0.2);
+      padding: 12px 14px;
       box-shadow: var(--shadow);
-      min-width: 0;
+      transition: var(--transition);
     }
-    .metric span { display: block; color: var(--muted); font-size: 11px; font-weight: 650; }
+
+    .metric:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(30, 41, 59, 0.35);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
     .metric strong {
       display: block;
-      margin-top: 3px;
-      font-size: 15px;
+      margin-top: 4px;
+      font-size: 18px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: #fff;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
     .work {
       min-height: 0;
       overflow: auto;
-      padding: 16px;
+      padding: 24px;
       display: grid;
       grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
-      gap: 16px;
+      gap: 24px;
     }
+
     .panel {
       min-width: 0;
       border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
+      border-radius: 12px;
+      background: rgba(17, 24, 39, 0.45);
+      backdrop-filter: blur(10px);
       box-shadow: var(--shadow);
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition);
     }
+
+    .panel:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
     .panel h2 {
       margin: 0;
-      padding: 11px 12px;
-      font-size: 13px;
+      padding: 14px 18px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       border-bottom: 1px solid var(--line);
-      background: #fbfcfe;
+      background: rgba(30, 41, 59, 0.15);
+      color: #e2e8f0;
     }
-    .timeline { padding: 12px; display: grid; gap: 8px; }
+
+    .timeline {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+
     .step {
       display: grid;
-      grid-template-columns: 88px 1fr auto;
-      gap: 10px;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
       align-items: center;
-      padding: 10px;
+      padding: 12px 16px;
       border: 1px solid var(--line);
-      border-radius: 6px;
-      background: #fff;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.3);
+      transition: var(--transition);
     }
-    .step.running { border-color: var(--accent-2); background: #eff6ff; }
-    .step.done { border-color: #bbf7d0; background: #f0fdf4; }
-    .step.fail { border-color: #fecaca; background: #fef2f2; }
+
+    .step:hover {
+      transform: translateX(2px);
+      background: rgba(15, 23, 42, 0.5);
+    }
+
+    .step.running {
+      border-color: var(--accent-2);
+      background: rgba(99, 102, 241, 0.08);
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+    }
+
+    .step.done {
+      border-color: rgba(16, 185, 129, 0.3);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .step.fail {
+      border-color: rgba(239, 68, 68, 0.3);
+      background: rgba(239, 68, 68, 0.05);
+    }
+
     .badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 72px;
-      min-height: 24px;
-      padding: 0 8px;
+      min-width: 80px;
+      min-height: 26px;
+      padding: 0 10px;
       border-radius: 999px;
       border: 1px solid var(--line);
       color: var(--muted);
-      background: #fff;
-      font-size: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 11px;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
-    .badge.running { color: #1d4ed8; border-color: #bfdbfe; background: #eff6ff; }
-    .badge.approved { color: var(--good); border-color: #bbf7d0; background: #f0fdf4; }
-    .badge.changes_requested { color: var(--warn); border-color: #fed7aa; background: #fff7ed; }
-    .badge.failed { color: var(--bad); border-color: #fecaca; background: #fef2f2; }
-    .review { padding: 12px; display: grid; gap: 10px; }
-    .review .message { white-space: pre-wrap; color: var(--text); }
-    .review ul { margin: 0; padding-left: 18px; color: var(--muted); }
+
+    /* Live pulse animation for connection badge */
+    @keyframes pulse {
+      0% { opacity: 0.6; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      50% { opacity: 1; box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { opacity: 0.6; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .badge.live {
+      color: var(--good);
+      border-color: rgba(16, 185, 129, 0.3);
+      background: rgba(16, 185, 129, 0.1);
+      animation: pulse 2s infinite;
+    }
+
+    .badge.running {
+      color: #3b82f6;
+      border-color: rgba(59, 130, 246, 0.3);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .badge.approved {
+      color: var(--good);
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.12);
+    }
+
+    .badge.changes_requested {
+      color: var(--warn);
+      border-color: rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .badge.failed {
+      color: var(--bad);
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .review {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+
+    .review .message {
+      white-space: pre-wrap;
+      color: #e2e8f0;
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+
+    .review ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+      font-size: 13px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .review li {
+      position: relative;
+    }
+
     .bottom {
       min-height: 0;
       display: grid;
       grid-template-columns: 1fr 1fr;
       border-top: 1px solid var(--line);
-      background: var(--panel);
+      background: #0b1220;
     }
+
     pre {
       margin: 0;
       height: 100%;
       overflow: auto;
-      padding: 12px;
-      background: #0b1220;
-      color: #dbeafe;
-      font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+      padding: 16px;
+      background: #070c16;
+      color: #e2e8f0;
+      font-family: 'Fira Code', 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
-    .log { border-left: 1px solid var(--line); }
+
+    /* Terminal stream indicator */
+    .log {
+      border-left: 1px solid var(--line);
+      color: #a7f3d0;
+      background: #020617;
+    }
+
     .muted { color: var(--muted); }
     .hidden { display: none; }
-    @media (max-width: 900px) {
+
+    @media (max-width: 1024px) {
       main { grid-template-columns: 1fr; height: auto; }
-      section { min-height: 780px; }
+      section { min-height: 850px; }
       aside { border-right: 0; border-bottom: 1px solid var(--line); }
       .topbar, .work, .bottom { grid-template-columns: 1fr; }
+      .bottom { grid-template-rows: 400px 300px; }
+      .log { border-left: 0; border-top: 1px solid var(--line); }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>AgentChain</h1>
+    <div class="brand">
+      <div class="logo-glow"></div>
+      <h1>AgentChain Dashboard</h1>
+    </div>
     <div id="connection" class="badge">idle</div>
   </header>
   <main>
     <aside>
       <div class="segmented">
-        <button id="pairMode" class="active" type="button">Pair</button>
-        <button id="configMode" type="button">Config</button>
+        <button id="pairMode" class="active" type="button">Pair Mode</button>
+        <button id="configMode" type="button">Config File</button>
       </div>
       <form id="runForm">
-        <label for="request">Request</label>
+        <label for="request">Prompt / Request</label>
         <textarea id="request" required>사용자 입력을 검증하는 함수를 작성해줘</textarea>
 
         <div id="pairFields">
           <div class="row">
             <div>
-              <label for="coder">Coder</label>
+              <label for="coder">Coder Agent</label>
               <select id="coder"></select>
             </div>
             <div>
-              <label for="reviewer">Reviewer</label>
+              <label for="reviewer">Reviewer Agent</label>
               <select id="reviewer"></select>
             </div>
           </div>
-          <label for="profile">Profile</label>
+          <label for="profile">Prebuilt Profile</label>
           <select id="profile"></select>
           <label for="target">Target File</label>
           <input id="target" value="src/generated.py">
         </div>
 
         <div id="configFields" class="hidden">
-          <label for="config">Config File</label>
+          <label for="config">Config Path</label>
           <input id="config" value="config.yaml">
         </div>
 
@@ -698,37 +966,37 @@ INDEX_HTML = r"""<!doctype html>
             <input id="maxIterations" type="number" min="1" value="3">
           </div>
           <div>
-            <label for="pluginsDir">Plugins Dir</label>
-            <input id="pluginsDir" placeholder="">
+            <label for="pluginsDir">Plugins Directory</label>
+            <input id="pluginsDir" placeholder="Optional plugins path">
           </div>
         </div>
         <div class="controls">
-          <button type="submit">Run</button>
-          <button id="clearButton" class="secondary" type="button">Clear</button>
+          <button type="submit">Run Pipeline</button>
+          <button id="clearButton" class="secondary" type="button">Clear View</button>
         </div>
       </form>
     </aside>
     <section>
       <div class="topbar">
         <div class="metric"><span>Status</span><strong id="status">idle</strong></div>
-        <div class="metric"><span>Run</span><strong id="runId">-</strong></div>
+        <div class="metric"><span>Run ID</span><strong id="runId">-</strong></div>
         <div class="metric"><span>Iteration</span><strong id="iteration">0</strong></div>
-        <div class="metric"><span>Review</span><strong id="reviewStatus">-</strong></div>
+        <div class="metric"><span>Last Review</span><strong id="reviewStatus">-</strong></div>
         <div class="metric"><span>Events</span><strong id="eventCount">0</strong></div>
       </div>
       <div class="work">
         <div class="panel">
-          <h2>Timeline</h2>
+          <h2>Execution Timeline</h2>
           <div id="timeline" class="timeline"></div>
         </div>
         <div class="panel">
-          <h2>Review</h2>
-          <div id="review" class="review"><span class="muted">No review yet.</span></div>
+          <h2>Code Review Results</h2>
+          <div id="review" class="review"><span class="muted">No review feedback received yet.</span></div>
         </div>
       </div>
       <div class="bottom">
-        <pre id="code">// code preview</pre>
-        <pre id="log" class="log">// event log</pre>
+        <pre id="code">// Generated code preview will appear here...</pre>
+        <pre id="log" class="log">// Server execution logs...</pre>
       </div>
     </section>
   </main>
@@ -740,7 +1008,7 @@ INDEX_HTML = r"""<!doctype html>
     const $ = (id) => document.getElementById(id);
     const log = (line) => {
       const el = $("log");
-      el.textContent += `${new Date().toLocaleTimeString()} ${line}\n`;
+      el.textContent += `[${new Date().toLocaleTimeString()}] ${line}\n`;
       el.scrollTop = el.scrollHeight;
     };
     const setBadge = (id, text, cls = "") => {
@@ -751,7 +1019,7 @@ INDEX_HTML = r"""<!doctype html>
     const option = (value, text = value) => {
       const el = document.createElement("option");
       el.value = value;
-      el.textContent = text || "manual";
+      el.textContent = text || "Manual Pair";
       return el;
     };
 
@@ -760,7 +1028,7 @@ INDEX_HTML = r"""<!doctype html>
       $("reviewer").appendChild(option(name));
     });
     $("reviewer").value = "kimi";
-    PROFILES.forEach((name) => $("profile").appendChild(option(name, name || "manual pair")));
+    PROFILES.forEach((name) => $("profile").appendChild(option(name, name || "Manual Pair (custom)")));
 
     function setMode(mode) {
       state.mode = mode;
@@ -777,9 +1045,9 @@ INDEX_HTML = r"""<!doctype html>
       state.events = 0;
       state.steps.clear();
       $("timeline").textContent = "";
-      $("review").innerHTML = '<span class="muted">No review yet.</span>';
-      $("code").textContent = "// code preview";
-      $("log").textContent = "// event log\n";
+      $("review").innerHTML = '<span class="muted">No review feedback received yet.</span>';
+      $("code").textContent = "// Generated code preview will appear here...";
+      $("log").textContent = "// Server execution logs...\n";
       $("status").textContent = "idle";
       $("runId").textContent = "-";
       $("iteration").textContent = "0";
@@ -823,7 +1091,7 @@ INDEX_HTML = r"""<!doctype html>
         badge.className = `badge ${item.state === "running" ? "running" : item.state === "done" ? "approved" : ""}`;
         badge.textContent = `#${item.iteration} ${item.role}`;
         const main = document.createElement("div");
-        main.innerHTML = `<strong>${item.agent}</strong><div class="muted">${item.output || ""}</div>`;
+        main.innerHTML = `<strong>${item.agent}</strong><div class="muted" style="font-size: 11px; margin-top: 2px;">${item.output || ""}</div>`;
         const status = document.createElement("span");
         status.className = "muted";
         status.textContent = item.state;
@@ -840,9 +1108,11 @@ INDEX_HTML = r"""<!doctype html>
       const cls = status === "approved" ? "approved" : status === "changes_requested" ? "changes_requested" : "";
       const suggestions = (data.suggestions || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
       $("review").innerHTML = `
-        <span class="badge ${cls}">${escapeHtml(status)}</span>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span class="badge ${cls}">${escapeHtml(status)}</span>
+        </div>
         <div class="message">${escapeHtml(data.message || "")}</div>
-        ${suggestions ? `<ul>${suggestions}</ul>` : ""}
+        ${suggestions ? `<ul style="margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 12px;">${suggestions}</ul>` : ""}
       `;
     }
 
@@ -860,21 +1130,21 @@ INDEX_HTML = r"""<!doctype html>
 
       if (type === "server_status") {
         $("status").textContent = data.status || "running";
-        setBadge("connection", data.status || "running", data.status === "completed" ? "approved" : "");
+        setBadge("connection", data.status || "running", data.status === "completed" ? "approved" : data.status === "running" ? "running" : "");
       } else if (type === "config_loaded") {
-        log(`config ${data.config}`);
+        log(`Loaded configuration profile: ${data.config}`);
       } else if (type === "agents_resolved") {
-        log(`agents ${data.agents.join(", ")}`);
+        log(`Resolved agents: ${data.agents.join(", ")}`);
       } else if (type === "run_started") {
-        log(`run started max=${data.max_iterations}`);
+        log(`Pipeline run started. Max iterations: ${data.max_iterations}`);
       } else if (type === "iteration_started") {
         $("iteration").textContent = `${data.iteration}/${data.max_iterations}`;
-        log(`iteration ${data.iteration} started`);
+        log(`Starting iteration ${data.iteration}...`);
       } else if (type === "step_started") {
         const key = stepKey(data.iteration, data.agent, data.role);
         state.steps.set(key, { ...data, state: "running" });
         renderTimeline();
-        log(`step ${data.role}:${data.agent} started`);
+        log(`[Step] ${data.role} (${data.agent}) started.`);
       } else if (type === "step_completed") {
         const key = stepKey(data.iteration, data.agent, data.role);
         state.steps.set(key, { ...data, state: "done" });
@@ -883,25 +1153,25 @@ INDEX_HTML = r"""<!doctype html>
           $("code").textContent = data.result.preview || "";
         }
         if (data.review) renderReview(data.review);
-        log(`step ${data.role}:${data.agent} completed`);
+        log(`[Step] ${data.role} (${data.agent}) completed successfully.`);
       } else if (type === "review_gate") {
         renderReview(data);
-        log(`review ${data.status}${data.retry ? " retry" : ""}`);
+        log(`[Review Gate] Status: ${data.status} ${data.retry ? "(Initiating Retry)" : ""}`);
       } else if (type === "retry_scheduled") {
-        log(`retry scheduled iteration ${data.iteration}`);
+        log(`[Retry] Iteration retry scheduled for loop index: ${data.iteration}`);
       } else if (type === "shell_started") {
-        log(`shell ${data.command.join(" ")}`);
+        log(`[Shell Exec] ${data.command.join(" ")}`);
       } else if (type === "shell_output") {
         log(`${data.stream}> ${String(data.text).trimEnd()}`);
       } else if (type === "run_completed") {
         $("status").textContent = "completed";
         if (data.result && data.result.code) $("code").textContent = data.result.code;
         setBadge("connection", "completed", "approved");
-        log("run completed");
+        log("Pipeline execution successfully completed!");
       } else if (type === "run_failed") {
         $("status").textContent = "failed";
         setBadge("connection", "failed", "failed");
-        log(`failed ${data.error}`);
+        log(`[Error] Run failed: ${data.error}`);
       }
     }
 
@@ -918,12 +1188,12 @@ INDEX_HTML = r"""<!doctype html>
       });
       const data = await response.json();
       if (!response.ok) {
-        log(`failed ${data.error || response.statusText}`);
+        log(`[Error] Run submission failed: ${data.error || response.statusText}`);
         return;
       }
       $("runId").textContent = data.run_id;
       state.source = new EventSource(`/api/runs/${data.run_id}/events`);
-      state.source.onopen = () => setBadge("connection", "live", "running");
+      state.source.onopen = () => setBadge("connection", "live", "live");
       state.source.onerror = () => setBadge("connection", "closed");
       state.source.onmessage = (msg) => handleEvent(JSON.parse(msg.data));
       ["server_status", "config_loaded", "agents_resolved", "run_started", "iteration_started",
