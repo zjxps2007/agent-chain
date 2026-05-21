@@ -391,7 +391,7 @@ class AgentChainHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "text/event-stream; charset=utf-8")
         self.send_header("Cache-Control", "no-cache")
-        self.send_header("Connection", "keep-alive")
+        self.send_header("Connection", "close")
         self.end_headers()
 
         try:
@@ -410,6 +410,7 @@ class AgentChainHandler(BaseHTTPRequestHandler):
             pass
         finally:
             record.unsubscribe(subscriber)
+            self.close_connection = True
 
 
 def serve(host: str = "127.0.0.1", port: int = 8787) -> None:
