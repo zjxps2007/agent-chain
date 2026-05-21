@@ -31,7 +31,7 @@ uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "USER
 For another project workspace, pass that workspace explicitly:
 
 ```powershell
-uv run python D:\Code\AgentChain\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "USER REQUEST" --config D:\path\to\project\.agent-chain.yaml --workspace D:\path\to\project
+uv run python <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "USER REQUEST" --config <PROJECT_ROOT>\.agent-chain.yaml --workspace <PROJECT_ROOT>
 ```
 
 The wrapper sets `PYTHONPATH` to this repository, runs AgentChain from the target workspace, and
@@ -87,7 +87,7 @@ Built-in profile configs are also available:
 Kimi can load this same skill directory when used as the host CLI:
 
 ```powershell
-kimi --skills-dir D:\Code\AgentChain\plugins\agent-chain-wrapper\skills --prompt "Use the agent-chain skill to implement this request."
+kimi --skills-dir <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\skills --prompt "Use the agent-chain skill to implement this request."
 ```
 
 ## Config For Codex Coder And CLI Reviewer

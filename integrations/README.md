@@ -10,7 +10,7 @@ The `agent-chain` executable must be installed and available on `PATH`.
 Register the prebuilt local marketplace:
 
 ```powershell
-codex plugin marketplace add C:\path\to\agent-chain\integrations\codex
+codex plugin marketplace add <AGENT_CHAIN_ROOT>\integrations\codex
 codex plugin add agent-chain-wrapper@agent-chain-local
 ```
 
@@ -19,7 +19,7 @@ codex plugin add agent-chain-wrapper@agent-chain-local
 Launch Kimi with the prebuilt skills directory:
 
 ```powershell
-kimi --skills-dir C:\path\to\agent-chain\integrations\kimi\skills --prompt "Use agent-chain for this request."
+kimi --skills-dir <AGENT_CHAIN_ROOT>\integrations\kimi\skills --prompt "Use agent-chain for this request."
 ```
 
 ## Antigravity

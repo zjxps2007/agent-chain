@@ -49,7 +49,7 @@ Supported profile names:
 If a CLI executable is not named `codex`, `kimi`, or `antigravity`, pass its path:
 
 ```powershell
-agent-chain run "USER REQUEST" --coder-cli codex --reviewer-cli antigravity --reviewer-command C:\Tools\antigravity.exe
+agent-chain run "USER REQUEST" --coder-cli codex --reviewer-cli antigravity --reviewer-command <ANTIGRAVITY_EXE>
 ```
 
 The reviewer should return JSON with `status`, `message`, and `suggestions`.

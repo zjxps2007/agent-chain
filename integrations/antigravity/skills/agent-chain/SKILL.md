@@ -32,7 +32,7 @@ agent-chain run "USER REQUEST" --coder-cli kimi --reviewer-cli antigravity --tar
 If the Antigravity executable has a different name or path:
 
 ```powershell
-agent-chain run "USER REQUEST" --coder-cli codex --reviewer-cli antigravity --reviewer-command C:\Tools\antigravity.exe --target-file src/generated.py
+agent-chain run "USER REQUEST" --coder-cli codex --reviewer-cli antigravity --reviewer-command <ANTIGRAVITY_EXE> --target-file src/generated.py
 ```
 
 ## Review Contract

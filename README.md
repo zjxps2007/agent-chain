@@ -179,7 +179,7 @@ agent_configs:
 이 repo에는 Codex에서 설치할 수 있는 로컬 플러그인 wrapper가 포함되어 있습니다.
 
 ```powershell
-codex plugin marketplace add D:\Code\AgentChain
+codex plugin marketplace add <AGENT_CHAIN_ROOT>
 codex plugin add agent-chain-wrapper@agent-chain-local
 ```
 
@@ -192,7 +192,7 @@ uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "요�
 다른 프로젝트를 대상으로 실행할 때는 해당 프로젝트 경로를 넘깁니다.
 
 ```powershell
-uv run python D:\Code\AgentChain\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "요청문" --config D:\Project\.agent-chain.yaml --workspace D:\Project
+uv run python <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "요청문" --config <PROJECT_ROOT>\.agent-chain.yaml --workspace <PROJECT_ROOT>
 ```
 
 Codex+Antigravity 기본 조합 템플릿은 `plugins/agent-chain-wrapper/configs/codex-antigravity.yaml`에 있습니다.
@@ -229,7 +229,7 @@ uv run python .\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "요�
 Kimi를 host CLI로 쓸 때는 같은 skill 디렉터리를 넘길 수 있습니다.
 
 ```powershell
-kimi --skills-dir D:\Code\AgentChain\plugins\agent-chain-wrapper\skills --prompt "agent-chain skill로 이 요청을 처리해줘."
+kimi --skills-dir <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\skills --prompt "agent-chain skill로 이 요청을 처리해줘."
 ```
 
 ## 사전 생성 integration pack
@@ -248,14 +248,14 @@ integrations/
 Codex:
 
 ```powershell
-codex plugin marketplace add D:\Code\AgentChain\integrations\codex
+codex plugin marketplace add <AGENT_CHAIN_ROOT>\integrations\codex
 codex plugin add agent-chain-wrapper@agent-chain-local
 ```
 
 Kimi:
 
 ```powershell
-kimi --skills-dir D:\Code\AgentChain\integrations\kimi\skills --prompt "agent-chain으로 이 요청을 처리해줘."
+kimi --skills-dir <AGENT_CHAIN_ROOT>\integrations\kimi\skills --prompt "agent-chain으로 이 요청을 처리해줘."
 ```
 
 Antigravity:
