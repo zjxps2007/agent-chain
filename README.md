@@ -85,6 +85,7 @@ ac r -o src/solution.py --json result.json "데이터 처리 파이프라인"
 pip install -e .
 ac r "요청문"
 ac p "요청문" -C codex -R kimi -t src/generated.py
+ac ui
 ```
 
 LLM 에이전트(`LLMCoderAgent`, `LLMReviewerAgent`)를 사용하려면 OpenAI SDK 선택 의존성을 설치하고
@@ -99,6 +100,31 @@ pip install -e ".[llm]"
 ```bash
 pip install -e ".[dev]"
 pytest
+```
+
+## 실시간 웹 UI
+
+로컬 웹 대시보드를 실행하면 파이프라인 진행 상황을 이벤트 스트림으로 볼 수 있습니다.
+
+```powershell
+ac ui
+```
+
+기본 주소는 `http://127.0.0.1:8787`입니다.
+
+웹 UI에서 볼 수 있는 항목:
+
+- iteration/step 진행 상태
+- coder/reviewer 실행 순서
+- review status, message, suggestions
+- retry 예약 여부
+- 외부 CLI stdout/stderr 스트림
+- 최종 코드와 이벤트 로그
+
+포트를 바꿀 때:
+
+```powershell
+ac ui --port 8790
 ```
 
 ## 커스텀 에이전트 만들기
@@ -302,6 +328,7 @@ agent_chain/
 ├── llm.py            # OpenAI Responses API 헬퍼
 ├── pipeline.py       # run_pipeline() 헬퍼
 ├── registry.py       # 에이전트 로딩 및 인터페이스 검증
+├── web.py            # 실시간 웹 UI / SSE 서버
 └── agents/
     ├── __init__.py
     ├── base.py       # BaseCoderAgent, BaseReviewerAgent
@@ -318,4 +345,4 @@ tests/
 1. **멀티 리뷰어**: 보안 리뷰어, 성능 리뷰어, 스타일 리뷰어를 병렬/순차로 연결
 2. **멀티 코더**: A 코더가 생성 → B 코더가 리팩토링 → 리뷰어가 검토
 3. **MCP 연동**: Kimi CLI의 도구를 에이전트 낶부에서 호출하도록 `run()` 메서드에 통합
-4. **웹 UI**: Streamlit/Gradio로 `run_pipeline()`을 감싸 시각화
+4. **멀티 실행 큐**: 여러 AgentChain run을 큐잉하고 웹 UI에서 비교

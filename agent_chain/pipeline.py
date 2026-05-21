@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from .core import Agent, Context, Pipeline
+from .core import Agent, Context, Pipeline, PipelineEventHandler
 
 
 def run_pipeline(
@@ -13,6 +13,7 @@ def run_pipeline(
     workspace: Path,
     env: Optional[Any] = None,
     language: str | None = None,
+    event_callback: Optional[PipelineEventHandler] = None,
 ) -> Context:
     """에이전트 맵과 설정으로 파이프라인을 간편하게 실행.
 
@@ -23,9 +24,10 @@ def run_pipeline(
         workspace: 작업 디렉토리 경로.
         env: Tool Environment 인스턴스.
         language: 타겟 언어 (선택).
+        event_callback: 실행 이벤트를 받을 콜백 (선택).
 
     Returns:
         최종 실행 컨텍스트.
     """
     pipeline = Pipeline(config)
-    return pipeline.execute(agents, request, workspace, env, language)
+    return pipeline.execute(agents, request, workspace, env, language, event_callback)

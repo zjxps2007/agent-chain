@@ -332,6 +332,24 @@ def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
         help="초기화할 디렉토리 (기본값: 현재 디렉토리)",
     )
 
+    # web UI
+    web_parser = subparsers.add_parser(
+        "web",
+        aliases=["ui"],
+        help="실시간 웹 UI를 실행합니다.",
+    )
+    web_parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="웹 UI bind host (기본값: 127.0.0.1)",
+    )
+    web_parser.add_argument(
+        "--port",
+        type=int,
+        default=8787,
+        help="웹 UI port (기본값: 8787)",
+    )
+
     return parser
 
 
@@ -344,6 +362,10 @@ def main(argv: list[str] | None = None) -> int:
         cmd_run(args)
     elif args.command in {"init", "i"}:
         cmd_init(args)
+    elif args.command in {"web", "ui"}:
+        from .web import serve
+
+        serve(host=args.host, port=args.port)
 
     return 0
 

@@ -64,3 +64,12 @@ def test_init_alias_parses() -> None:
 
     assert args.command == "i"
     assert args.path == "demo"
+
+
+def test_ui_alias_parses() -> None:
+    parser = build_parser(prog="ac")
+    args = parser.parse_args(["ui", "--host", "0.0.0.0", "--port", "9000"])
+
+    assert args.command == "ui"
+    assert args.host == "0.0.0.0"
+    assert args.port == 9000

@@ -57,6 +57,42 @@ def test_pipeline_retries_from_first_step_after_changes_requested(tmp_path: Path
     ]
 
 
+def test_pipeline_emits_live_events(tmp_path: Path) -> None:
+    pipeline = Pipeline(
+        {
+            "max_iterations": 3,
+            "steps": [
+                {"role": "coder", "agent": "coder"},
+                {"role": "reviewer", "agent": "reviewer"},
+            ],
+        }
+    )
+    agents = {
+        "coder": IterationCoder("coder"),
+        "reviewer": RejectOnceReviewer("reviewer"),
+    }
+    events = []
+
+    pipeline.execute(
+        agents=agents,
+        request="이벤트 테스트",
+        workspace=tmp_path,
+        language="python",
+        event_callback=lambda event_type, data: events.append((event_type, data)),
+    )
+
+    event_types = [event_type for event_type, _ in events]
+
+    assert event_types[0] == "run_started"
+    assert event_types.count("iteration_started") == 2
+    assert event_types.count("step_started") == 4
+    assert event_types.count("step_completed") == 4
+    assert "review_gate" in event_types
+    assert "retry_scheduled" in event_types
+    assert event_types[-1] == "run_completed"
+    assert events[-1][1]["review"]["status"] == "approved"
+
+
 def test_pipeline_raises_for_missing_agent(tmp_path: Path) -> None:
     pipeline = Pipeline(
         {

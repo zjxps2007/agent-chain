@@ -5,8 +5,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 import json
+
+
+PipelineEventHandler = Callable[[str, Dict[str, Any]], None]
 
 
 @dataclass
@@ -197,6 +200,33 @@ def _retry_statuses(step: Dict[str, Any]) -> set[str]:
     return {"changes_requested"}
 
 
+def _event_output(value: Any, max_chars: int = 4000) -> Dict[str, Any]:
+    """Return a compact, JSON-safe representation for live UI events."""
+    if isinstance(value, ReviewResult):
+        return {"kind": "review", "value": value.to_dict()}
+    if isinstance(value, str):
+        return {
+            "kind": "text",
+            "length": len(value),
+            "preview": value[:max_chars],
+            "truncated": len(value) > max_chars,
+        }
+    try:
+        json.dumps(value, ensure_ascii=False)
+    except TypeError:
+        return {"kind": "repr", "preview": repr(value)[:max_chars]}
+    return {"kind": "json", "value": value}
+
+
+def _emit(
+    event_callback: Optional[PipelineEventHandler],
+    event_type: str,
+    **data: Any,
+) -> None:
+    if event_callback is not None:
+        event_callback(event_type, data)
+
+
 class Pipeline:
     """선언적 설정으로부터 N-step 워크플로우를 구성하고 실행."""
 
@@ -211,13 +241,36 @@ class Pipeline:
         workspace: Path,
         env: Optional[Any] = None,
         language: Optional[str] = None,
+        event_callback: Optional[PipelineEventHandler] = None,
     ) -> Context:
         """등록된 에이전트 맵을 사용하여 multi-step 파이프라인을 실행."""
         ctx = Context(request=request, workspace=workspace, env=env, language=language)
+        _emit(
+            event_callback,
+            "run_started",
+            request=request,
+            workspace=str(workspace),
+            language=language,
+            max_iterations=self.max_iterations,
+            steps=[
+                {
+                    "role": step.get("role", step["agent"]),
+                    "agent": step["agent"],
+                    "output": _step_output_key(step),
+                }
+                for step in self.steps
+            ],
+        )
 
         for i in range(self.max_iterations):
             ctx.iteration = i + 1
             print(f"\n=== Iteration {ctx.iteration}/{self.max_iterations} ===")
+            _emit(
+                event_callback,
+                "iteration_started",
+                iteration=ctx.iteration,
+                max_iterations=self.max_iterations,
+            )
 
             should_retry = False
 
@@ -229,16 +282,50 @@ class Pipeline:
                     raise ValueError(f"에이전트 '{agent_name}' 를 찾을 수 없습니다.")
 
                 output_key = _step_output_key(step)
+                agent_display_name = getattr(agent, "name", agent_name)
+                _emit(
+                    event_callback,
+                    "step_started",
+                    iteration=ctx.iteration,
+                    role=role,
+                    agent=agent_display_name,
+                    agent_key=agent_name,
+                    output=output_key,
+                )
                 result = agent.run(ctx)
                 ctx, produced_review = _apply_agent_result(ctx, result, output_key)
-                agent_display_name = getattr(agent, "name", agent_name)
-                ctx.log_step(agent_display_name, role, _context_output(ctx, output_key))
+                output_value = _context_output(ctx, output_key)
+                ctx.log_step(agent_display_name, role, output_value)
+                _emit(
+                    event_callback,
+                    "step_completed",
+                    iteration=ctx.iteration,
+                    role=role,
+                    agent=agent_display_name,
+                    agent_key=agent_name,
+                    output=output_key,
+                    result=_event_output(output_value),
+                    code_length=len(ctx.code or ""),
+                    review=ctx.review.to_dict() if ctx.review else None,
+                )
 
                 if _is_review_gate(step, output_key, produced_review) and ctx.review:
                     ctx.reviews.append(ctx.review)
                     print(f"[ReviewGate '{agent_display_name}'] {ctx.review.status}: {ctx.review.message}")
+                    retry_requested = ctx.review.status in _retry_statuses(step)
+                    _emit(
+                        event_callback,
+                        "review_gate",
+                        iteration=ctx.iteration,
+                        agent=agent_display_name,
+                        status=ctx.review.status,
+                        message=ctx.review.message,
+                        suggestions=ctx.review.suggestions,
+                        line_comments=ctx.review.line_comments,
+                        retry=retry_requested,
+                    )
 
-                    if ctx.review.status in _retry_statuses(step):
+                    if retry_requested:
                         should_retry = True
                         # 남은 steps를 skip하고 다음 iteration에서 다시 처음부터
                         break
@@ -251,12 +338,46 @@ class Pipeline:
 
             if not should_retry:
                 print("[OK] 모든 단계 통과. 파이프라인 종료.")
+                _emit(
+                    event_callback,
+                    "iteration_completed",
+                    iteration=ctx.iteration,
+                    retry=False,
+                )
                 break
 
             if ctx.iteration >= self.max_iterations:
                 print("[WARN] 최대 반복 횟수 도달. 종료.")
+                _emit(
+                    event_callback,
+                    "iteration_completed",
+                    iteration=ctx.iteration,
+                    retry=False,
+                    max_iterations_reached=True,
+                )
                 break
 
             print("[RETRY] 수정 요청이 있어 다음 반복을 재시도합니다...")
+            _emit(
+                event_callback,
+                "iteration_completed",
+                iteration=ctx.iteration,
+                retry=True,
+            )
+            _emit(
+                event_callback,
+                "retry_scheduled",
+                iteration=ctx.iteration + 1,
+                reason=ctx.review.message if ctx.review else "",
+            )
 
+        _emit(
+            event_callback,
+            "run_completed",
+            iteration=ctx.iteration,
+            review=ctx.review.to_dict() if ctx.review else None,
+            reviews=len(ctx.reviews),
+            code_length=len(ctx.code or ""),
+            result=ctx.to_dict(),
+        )
         return ctx
