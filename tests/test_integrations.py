@@ -114,6 +114,7 @@ def test_prebuilt_common_configs_are_valid_profiles() -> None:
 def test_prebuilt_skill_files_call_agent_chain_binary() -> None:
     skill_paths = [
         Path("integrations/codex/plugins/agent-chain-wrapper/skills/agent-chain/SKILL.md"),
+        Path("integrations/kimi/SKILL.md"),
         Path("integrations/kimi/skills/agent-chain/SKILL.md"),
         Path("integrations/antigravity/skills/agent-chain/SKILL.md"),
     ]
@@ -133,7 +134,42 @@ def test_integration_setup_defaults_to_host_session_review() -> None:
         f"codex plugin marketplace add {Path('.').resolve()}",
         "codex plugin add agent-chain-wrapper@agent-chain",
     ]
+    assert setup["apply_commands"] == [
+        ["codex", "plugin", "marketplace", "add", str(Path(".").resolve())],
+        ["codex", "plugin", "add", "agent-chain-wrapper@agent-chain"],
+    ]
     assert any("agc review" in note for note in setup["notes"])
+
+
+def test_kimi_setup_uses_plugin_install() -> None:
+    root = Path("integrations/kimi").resolve()
+    setup = build_integration_setup("kimi", root)
+
+    assert (root / "plugin.json").exists()
+    assert (root / "SKILL.md").exists()
+    assert setup["commands"] == [
+        f"kimi plugin install {root}",
+    ]
+    assert setup["apply_commands"] == [
+        ["kimi", "plugin", "install", str(root)],
+    ]
+    assert any("SKILL.md" in note for note in setup["notes"])
+
+
+def test_antigravity_setup_uses_agy_plugin_commands() -> None:
+    root = Path("integrations/antigravity").resolve()
+    setup = build_integration_setup("antigravity", root)
+
+    assert (root / "plugin.json").exists()
+    assert setup["commands"] == [
+        f"agy plugin validate {root}",
+        f"agy plugin install {root}",
+    ]
+    assert setup["apply_commands"] == [
+        ["agy", "plugin", "validate", str(root)],
+        ["agy", "plugin", "install", str(root)],
+    ]
+    assert any("agy" in note for note in setup["notes"])
 
 
 def test_copy_integration_pack_copies_skill_files(tmp_path: Path) -> None:

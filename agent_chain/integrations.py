@@ -201,6 +201,10 @@ def build_integration_setup(host: str, host_root: Path) -> Dict[str, Any]:
                 f"codex plugin marketplace add {host_root}",
                 f"codex plugin add agent-chain-wrapper@{marketplace_name}",
             ],
+            "apply_commands": [
+                ["codex", "plugin", "marketplace", "add", str(host_root)],
+                ["codex", "plugin", "add", f"agent-chain-wrapper@{marketplace_name}"],
+            ],
             "notes": [
                 "Codex remains the coder. The plugin skill calls `agc review` for external review by default.",
                 "`agc p` is only for explicitly delegated coder/reviewer pairs.",
@@ -213,9 +217,14 @@ def build_integration_setup(host: str, host_root: Path) -> Dict[str, Any]:
             "mode": "host-session-review",
             "path": str(host_root),
             "commands": [
-                f'kimi --skills-dir {skills_dir} --prompt "Use agent-chain for this request."',
+                f"kimi plugin install {host_root}",
+            ],
+            "apply_commands": [
+                ["kimi", "plugin", "install", str(host_root)],
             ],
             "notes": [
+                "Kimi Code CLI discovers the bundled root SKILL.md after plugin install.",
+                f"Legacy one-session skills-dir usage is still available: {skills_dir}",
                 "Kimi remains the coder. The skill calls `agc review -R codex` by default.",
                 "`agc p` is only for explicitly delegated coder/reviewer pairs.",
             ],
@@ -225,10 +234,17 @@ def build_integration_setup(host: str, host_root: Path) -> Dict[str, Any]:
             "host": host,
             "mode": "host-session-review",
             "path": str(host_root),
-            "commands": [],
+            "commands": [
+                f"agy plugin validate {host_root}",
+                f"agy plugin install {host_root}",
+            ],
+            "apply_commands": [
+                ["agy", "plugin", "validate", str(host_root)],
+                ["agy", "plugin", "install", str(host_root)],
+            ],
             "notes": [
-                f"Register skills from: {host_root / 'skills'}",
-                f"Register custom commands from: {host_root / 'commands'}",
+                "Antigravity CLI uses the `agy` executable.",
+                f"Plugin skills are loaded from: {host_root / 'skills'}",
                 "Antigravity remains the coder. The skill/command calls `agc review` by default.",
                 "`agc p` is only for explicitly delegated coder/reviewer pairs.",
             ],

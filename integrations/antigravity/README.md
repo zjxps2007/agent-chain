@@ -1,17 +1,27 @@
 # AgentChain Antigravity Integration
 
-This directory contains prebuilt skill and command files for Antigravity-style
-integrations.
+This directory contains an Antigravity CLI plugin for AgentChain.
 
-Because Antigravity CLI was not available in the development environment, this
-pack is intentionally file-based:
+Antigravity CLI uses the `agy` executable. Verify it first:
+
+```powershell
+agy --version
+```
+
+Install the plugin:
+
+```powershell
+agy plugin validate <AGENT_CHAIN_ROOT>\integrations\antigravity
+agy plugin install <AGENT_CHAIN_ROOT>\integrations\antigravity
+```
+
+The plugin contains:
 
 - `skills/agent-chain/SKILL.md`
 - `commands/agent-chain.md`
+- `plugin.json`
 
-Copy or register these files according to the Antigravity CLI's custom skill or
-command mechanism. The `agc` executable must be on `PATH`.
-`agent-chain` remains available as the long-form command.
+The `agc` executable must be on `PATH`. `agent-chain` remains available as the long-form command.
 
 Direct run:
 

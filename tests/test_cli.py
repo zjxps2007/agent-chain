@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
-from agent_chain.cli import _load_run_config, build_parser
+from agent_chain import cli as cli_module
+from agent_chain.cli import _apply_setups, _load_run_config, build_parser
+from agent_chain.integrations import build_integration_setup
 
 
 def test_short_agc_entrypoint_is_registered() -> None:
@@ -86,13 +89,59 @@ def test_ui_alias_parses() -> None:
 
 def test_install_alias_parses_for_cli_hosts() -> None:
     parser = build_parser(prog="agc")
-    args = parser.parse_args(["install", "codex", "--copy-to", "dist", "--force", "--json"])
+    args = parser.parse_args(["install", "codex", "--copy-to", "dist", "--force", "--apply", "--json"])
 
     assert args.command == "install"
     assert args.target == "codex"
     assert args.copy_to == "dist"
     assert args.force is True
+    assert args.apply is True
     assert args.json is True
+
+
+def test_apply_setups_runs_codex_commands(monkeypatch, tmp_path: Path) -> None:
+    setup = build_integration_setup("codex", tmp_path)
+    calls: list[list[str]] = []
+
+    def fake_run(command: list[str]) -> subprocess.CompletedProcess[str]:
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(cli_module.shutil, "which", lambda executable: f"/bin/{executable}")
+    monkeypatch.setattr(cli_module, "_run_setup_command", fake_run)
+
+    results, exit_code = _apply_setups([setup])
+
+    assert exit_code == 0
+    assert calls == setup["apply_commands"]
+    assert [result["status"] for result in results] == ["applied", "applied"]
+
+
+def test_apply_setups_skips_hosts_without_persistent_setup() -> None:
+    setup = {
+        "host": "custom",
+        "commands": ["custom setup"],
+        "apply_commands": [],
+    }
+
+    results, exit_code = _apply_setups([setup])
+
+    assert exit_code == 0
+    assert results[0]["host"] == "custom"
+    assert results[0]["status"] == "skipped"
+    assert "manual_commands" in results[0]
+
+
+def test_apply_setups_reports_missing_executable(monkeypatch, tmp_path: Path) -> None:
+    setup = build_integration_setup("codex", tmp_path)
+    monkeypatch.setattr(cli_module.shutil, "which", lambda executable: None)
+
+    results, exit_code = _apply_setups([setup])
+
+    assert exit_code == 1
+    assert results[0]["status"] == "failed"
+    assert results[0]["returncode"] == 127
+    assert "Executable not found" in results[0]["stderr"]
 
 
 def test_review_alias_parses_for_host_session_flow() -> None:

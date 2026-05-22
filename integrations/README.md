@@ -15,6 +15,14 @@ agc setup antigravity
 agc setup all
 ```
 
+Codex, Kimi, Antigravity 등록 명령을 바로 실행하려면:
+
+```powershell
+agc setup codex --apply
+agc setup kimi --apply
+agc setup antigravity --apply
+```
+
 파일을 다른 위치로 복사한 뒤 그 위치 기준의 등록 명령을 보고 싶으면:
 
 ```powershell
@@ -34,22 +42,22 @@ codex plugin add agent-chain-wrapper@agent-chain
 
 ## Kimi
 
-Kimi에는 사전 생성된 스킬 디렉터리를 넘깁니다.
+Kimi에는 사전 생성된 플러그인 디렉터리를 설치합니다.
 
 ```powershell
-kimi --skills-dir <AGENT_CHAIN_ROOT>\integrations\kimi\skills --prompt "agent-chain으로 이 요청을 처리해줘."
+kimi plugin install <AGENT_CHAIN_ROOT>\integrations\kimi
 ```
 
 ## Antigravity
 
-Antigravity에는 아래 파일들을 스킬 또는 사용자 명령 경로에 등록합니다.
+Antigravity CLI는 `agy` 실행 파일을 사용합니다. 플러그인은 아래처럼 등록합니다.
 
-```text
-integrations/antigravity/skills
-integrations/antigravity/commands
+```powershell
+agy plugin validate <AGENT_CHAIN_ROOT>\integrations\antigravity
+agy plugin install <AGENT_CHAIN_ROOT>\integrations\antigravity
 ```
 
-Antigravity 실행 파일명이 `antigravity`가 아니면 `--coder-command` 또는 `--reviewer-command`로 실제 경로를 넘기세요.
+Antigravity 실행 파일명이 `agy`가 아니면 `--coder-command` 또는 `--reviewer-command`로 실제 경로를 넘기세요.
 
 ## 자주 쓰는 실행
 

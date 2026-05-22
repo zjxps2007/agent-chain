@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -406,7 +407,96 @@ def _install_hosts(target: str) -> tuple[str, ...]:
     return (target,)
 
 
-def cmd_install(args: argparse.Namespace) -> None:
+def _run_setup_command(command: List[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        command,
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+
+
+def _apply_setups(setups: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], int]:
+    results: List[Dict[str, Any]] = []
+    exit_code = 0
+
+    for setup in setups:
+        host = setup["host"]
+        apply_commands = setup.get("apply_commands") or []
+        if not apply_commands:
+            results.append(
+                {
+                    "host": host,
+                    "status": "skipped",
+                    "message": "No automatic persistent setup is available for this host yet.",
+                    "manual_commands": setup.get("commands", []),
+                }
+            )
+            continue
+
+        for command in apply_commands:
+            executable = command[0]
+            command_text = subprocess.list2cmdline(command)
+            if shutil.which(executable) is None:
+                exit_code = 1
+                results.append(
+                    {
+                        "host": host,
+                        "command": command,
+                        "command_text": command_text,
+                        "status": "failed",
+                        "returncode": 127,
+                        "stderr": f"Executable not found on PATH: {executable}",
+                    }
+                )
+                break
+
+            completed = _run_setup_command(command)
+            if completed.returncode != 0:
+                exit_code = 1
+            results.append(
+                {
+                    "host": host,
+                    "command": command,
+                    "command_text": command_text,
+                    "status": "applied" if completed.returncode == 0 else "failed",
+                    "returncode": completed.returncode,
+                    "stdout": completed.stdout.strip(),
+                    "stderr": completed.stderr.strip(),
+                }
+            )
+
+    return results, exit_code
+
+
+def _print_apply_results(results: List[Dict[str, Any]]) -> None:
+    if not results:
+        return
+    print("Apply:")
+    for result in results:
+        host = result["host"]
+        status = result["status"]
+        if status == "skipped":
+            print(f"  [SKIPPED] {host}: {result['message']}")
+            manual_commands = result.get("manual_commands") or []
+            if manual_commands:
+                print("    Manual commands:")
+                for command in manual_commands:
+                    print(f"      {command}")
+            continue
+
+        command_text = result["command_text"]
+        print(f"  [{status.upper()}] {host}: {command_text}")
+        if result.get("stdout"):
+            print(f"    stdout: {result['stdout']}")
+        if result.get("stderr"):
+            print(f"    stderr: {result['stderr']}")
+    print()
+
+
+def cmd_install(args: argparse.Namespace) -> int:
     hosts = _install_hosts(args.target)
     setups = []
     copy_root = Path(args.copy_to).resolve() if args.copy_to else None
@@ -424,9 +514,17 @@ def cmd_install(args: argparse.Namespace) -> None:
             )
         setups.append(build_integration_setup(host, host_root.resolve()))
 
+    apply_results: List[Dict[str, Any]] = []
+    apply_exit_code = 0
+    if args.apply:
+        apply_results, apply_exit_code = _apply_setups(setups)
+
     if args.json:
-        print(json.dumps({"integrations": setups}, ensure_ascii=False, indent=2))
-        return
+        payload: Dict[str, Any] = {"integrations": setups}
+        if args.apply:
+            payload["apply_results"] = apply_results
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return apply_exit_code
 
     print("AgentChain integration setup")
     print("Default flow: current CLI session codes, AgentChain calls only the reviewer via `agc review`.\n")
@@ -443,6 +541,9 @@ def cmd_install(args: argparse.Namespace) -> None:
             for note in notes:
                 print(f"  - {note}")
         print()
+    if args.apply:
+        _print_apply_results(apply_results)
+    return apply_exit_code
 
 
 def _status_store(args: argparse.Namespace) -> JobStore:
@@ -730,6 +831,11 @@ def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
         help="Allow --copy-to to merge into an existing target directory.",
     )
     install_parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Run supported persistent setup commands instead of only printing them.",
+    )
+    install_parser.add_argument(
         "--json",
         action="store_true",
         help="Print setup metadata as JSON.",
@@ -795,7 +901,7 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command in {"init", "i"}:
         cmd_init(args)
     elif args.command in {"install", "setup"}:
-        cmd_install(args)
+        return cmd_install(args)
     elif args.command == "status":
         cmd_status(args)
     elif args.command == "result":

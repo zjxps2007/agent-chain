@@ -1,0 +1,5 @@
+{
+  "name": "agent-chain",
+  "version": "0.1.0",
+  "description": "Use AgentChain to review code from the current Kimi session with another CLI."
+}

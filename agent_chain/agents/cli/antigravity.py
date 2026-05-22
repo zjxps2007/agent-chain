@@ -12,7 +12,7 @@ class _AntigravityCommandMixin:
     """Default Antigravity command shape with config override support."""
 
     def _init_antigravity_config(self) -> None:
-        self.cli_command = self.config.get("cli_command", "antigravity")
+        self.cli_command = self.config.get("cli_command", "agy")
 
     def _antigravity_command(self, context: Context, prompt: str) -> Union[str, List[str]]:
         if self.config.get("command") is not None:
@@ -27,7 +27,7 @@ class _AntigravityCommandMixin:
 class AntigravityCLICoder(_AntigravityCommandMixin, ConfigurableCLICoder):
     """Antigravity CLI coder.
 
-    The default command is `antigravity --prompt {prompt}`. If the installed
+    The default command is `agy --prompt {prompt}`. If the installed
     CLI uses a different syntax, set `command` explicitly in agent_configs.
     """
 

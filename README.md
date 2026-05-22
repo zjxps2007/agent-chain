@@ -152,6 +152,16 @@ agc setup antigravity
 agc setup all
 ```
 
+Codex, Kimi, Antigravity는 자동 등록까지 실행할 수 있습니다.
+
+```powershell
+agc setup codex --apply
+agc setup kimi --apply
+agc setup antigravity --apply
+```
+
+`--apply`는 Codex에 대해 `codex plugin marketplace add`와 `codex plugin add`를 실행하고, Kimi에 대해 `kimi plugin install`, Antigravity에 대해 `agy plugin validate`와 `agy plugin install`을 실행합니다.
+
 미리 만들어 둔 파일을 다른 위치로 먼저 복사하려면:
 
 ```powershell
@@ -260,7 +270,7 @@ agent_configs:
     class: agent_chain.agents.cli.ConfigurableCLIReviewer
     target_file: src/generated.py
     command:
-      - antigravity
+      - agy
       - --prompt
       - "{prompt}"
 ```
@@ -296,6 +306,12 @@ Get-Content src/generated.py -Raw | agc review "요청문" -R kimi --stdin --jso
 ```powershell
 codex plugin marketplace add <AGENT_CHAIN_ROOT>
 codex plugin add agent-chain-wrapper@agent-chain
+```
+
+또는 AgentChain이 직접 등록 명령을 실행하게 할 수 있습니다.
+
+```powershell
+agc setup codex --apply
 ```
 
 설치 후 Codex가 `agent-chain` 스킬을 사용할 수 있고, 실제 실행은 래퍼 스크립트가 담당합니다.
@@ -343,10 +359,10 @@ agc p "요청문" -C antigravity -R kimi -t src/generated.py
 agc p "요청문" -P kimi-codex -w .
 ```
 
-Kimi를 호스트 CLI로 쓸 때는 같은 스킬 디렉터리를 넘길 수 있습니다.
+Kimi를 호스트 CLI로 쓸 때는 플러그인으로 등록할 수 있습니다.
 
 ```powershell
-kimi --skills-dir <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\skills --prompt "agent-chain 스킬로 이 요청을 처리해줘."
+kimi plugin install <AGENT_CHAIN_ROOT>\integrations\kimi
 ```
 
 ## 사전 생성 통합 패키지
@@ -372,17 +388,17 @@ codex plugin add agent-chain-wrapper@agent-chain
 Kimi:
 
 ```powershell
-kimi --skills-dir <AGENT_CHAIN_ROOT>\integrations\kimi\skills --prompt "agent-chain으로 이 요청을 처리해줘."
+kimi plugin install <AGENT_CHAIN_ROOT>\integrations\kimi
 ```
 
-Antigravity:
+Antigravity CLI는 `agy` 실행 파일을 사용합니다.
 
-```text
-integrations/antigravity/skills
-integrations/antigravity/commands
+```powershell
+agy plugin validate <AGENT_CHAIN_ROOT>\integrations\antigravity
+agy plugin install <AGENT_CHAIN_ROOT>\integrations\antigravity
 ```
 
-위 파일들을 Antigravity의 스킬/사용자 명령 경로에 등록하면 됩니다. Antigravity 실행 파일명이 다르면
+위 명령으로 AgentChain 플러그인을 Antigravity에 등록할 수 있습니다. Antigravity 실행 파일명이 `agy`가 아니면
 `--coder-command` 또는 `--reviewer-command`로 실제 경로를 넘기세요.
 
 ## 아키텍처

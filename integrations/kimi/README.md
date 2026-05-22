@@ -1,12 +1,15 @@
 # AgentChain Kimi Integration
 
-This directory is a prebuilt Kimi skills pack.
+This directory is a prebuilt Kimi Code CLI plugin.
 
-Usage:
+Kimi Code CLI uses `kimi plugin install` for persistent plugin registration:
 
 ```powershell
-kimi --skills-dir <AGENT_CHAIN_ROOT>\integrations\kimi\skills --prompt "Use agent-chain for this request."
+kimi plugin install <AGENT_CHAIN_ROOT>\integrations\kimi
 ```
+
+The plugin bundles a root `SKILL.md`. The legacy `skills/agent-chain/SKILL.md`
+copy remains for one-session `--skills-dir` workflows.
 
 The `agc` executable must be on `PATH`. `agent-chain` remains available as the long-form command.
 

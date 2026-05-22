@@ -85,6 +85,16 @@ def test_resolve_agents_supports_antigravity_aliases() -> None:
     assert isinstance(agents["antigravity_reviewer"], AntigravityCLIReviewer)
 
 
+def test_antigravity_agents_default_to_agy_command(tmp_path: Path) -> None:
+    context = Context(request="review", workspace=tmp_path)
+
+    coder = AntigravityCLICoder("antigravity_coder")
+    reviewer = AntigravityCLIReviewer("antigravity_reviewer")
+
+    assert coder.build_command(context)[0] == "agy"
+    assert reviewer.build_command(context)[0] == "agy"
+
+
 def test_discover_agents_loads_valid_plugin_with_snake_case_alias(tmp_path: Path) -> None:
     plugins_dir = tmp_path / "agents"
     plugins_dir.mkdir()

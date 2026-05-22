@@ -82,10 +82,10 @@ Supported profile names:
 
 ## Notes
 
-If a CLI executable is not named `codex`, `kimi`, or `antigravity`, pass its path:
+If a CLI executable is not named `codex`, `kimi`, or `agy` for Antigravity, pass its path:
 
 ```powershell
-agc p "USER REQUEST" -C codex -R antigravity --reviewer-command <ANTIGRAVITY_EXE>
+agc p "USER REQUEST" -C codex -R antigravity --reviewer-command <AGY_EXE>
 ```
 
 The reviewer should return JSON with `status`, `message`, and `suggestions`.

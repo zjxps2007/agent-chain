@@ -73,7 +73,7 @@ Supported profiles:
 
 ## Host Setup
 
-Install the persistent Kimi plugin:
+Install this plugin with:
 
 ```powershell
 kimi plugin install <AGENT_CHAIN_ROOT>\integrations\kimi

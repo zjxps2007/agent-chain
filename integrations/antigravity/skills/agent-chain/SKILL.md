@@ -56,10 +56,10 @@ Kimi as coder, Antigravity as reviewer:
 agc p "USER REQUEST" -C kimi -R antigravity -t src/generated.py -w .
 ```
 
-If the Antigravity executable has a different name or path:
+If the Antigravity executable is not available as `agy`:
 
 ```powershell
-agc p "USER REQUEST" -C codex -R antigravity --reviewer-command <ANTIGRAVITY_EXE> -t src/generated.py
+agc p "USER REQUEST" -C codex -R antigravity --reviewer-command <AGY_EXE> -t src/generated.py
 ```
 
 ## Review Contract

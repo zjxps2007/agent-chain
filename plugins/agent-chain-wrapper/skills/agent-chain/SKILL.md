@@ -117,7 +117,7 @@ Built-in profile configs are also available:
 Kimi can load this same skill directory when used as the host CLI:
 
 ```powershell
-kimi --skills-dir <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\skills --prompt "Use the agent-chain skill to implement this request."
+kimi plugin install <AGENT_CHAIN_ROOT>\integrations\kimi
 ```
 
 ## Config For Codex Coder And CLI Reviewer
@@ -143,7 +143,7 @@ agent_configs:
     class: agent_chain.agents.cli.ConfigurableCLIReviewer
     target_file: src/generated.py
     command:
-      - antigravity
+      - agy
       - --prompt
       - "{prompt}"
 ```
