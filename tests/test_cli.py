@@ -28,6 +28,15 @@ def test_pair_alias_defaults_to_codex_kimi_config() -> None:
     assert [step["agent"] for step in config["steps"]] == ["codex_coder", "kimi_reviewer"]
 
 
+def test_delegate_alias_defaults_to_codex_kimi_config() -> None:
+    parser = build_parser(prog="agc")
+    args = parser.parse_args(["delegate", "implement a parser"])
+
+    assert args.command == "delegate"
+    assert args.coder_cli == "codex"
+    assert args.reviewer_cli == "kimi"
+
+
 def test_run_alias_accepts_short_cli_options() -> None:
     parser = build_parser(prog="agc")
     args = parser.parse_args(
@@ -111,3 +120,42 @@ def test_review_alias_parses_for_host_session_flow() -> None:
     assert args.workspace == "work"
     assert args.json == ".agent-chain-review.json"
     assert args.fail_on_changes is True
+
+
+def test_challenge_alias_parses_review_options() -> None:
+    parser = build_parser(prog="agc")
+    args = parser.parse_args(
+        [
+            "challenge",
+            "implement a parser",
+            "-R",
+            "codex",
+            "-t",
+            "src/generated.py",
+            "--focus",
+            "race conditions",
+            "--background",
+            "--jobs-dir",
+            ".jobs",
+        ]
+    )
+
+    assert args.command == "challenge"
+    assert args.reviewer_cli == "codex"
+    assert args.focus == "race conditions"
+    assert args.background is True
+    assert args.jobs_dir == ".jobs"
+
+
+def test_job_commands_parse() -> None:
+    parser = build_parser(prog="agc")
+
+    status = parser.parse_args(["status", "job123", "--jobs-dir", ".jobs"])
+    result = parser.parse_args(["result", "job123", "--json"])
+    cancel = parser.parse_args(["cancel", "job123"])
+
+    assert status.command == "status"
+    assert status.job_id == "job123"
+    assert result.command == "result"
+    assert result.json is True
+    assert cancel.command == "cancel"

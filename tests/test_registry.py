@@ -324,6 +324,26 @@ def test_kimi_reviewer_prompt_includes_original_request(tmp_path: Path) -> None:
     assert "src/generated.py" in prompt
 
 
+def test_kimi_reviewer_prompt_supports_challenge_mode(tmp_path: Path) -> None:
+    from agent_chain.agents.cli.kimi import KimiCLIReviewer
+
+    reviewer = KimiCLIReviewer(
+        "kimi_reviewer",
+        {
+            "target_file": "src/generated.py",
+            "review_mode": "challenge",
+            "review_focus": "race conditions",
+        },
+    )
+    context = Context(request="implement queue worker", workspace=tmp_path, language="python")
+
+    command = reviewer.build_command(context)
+    prompt = command[command.index("--prompt") + 1]
+
+    assert "adversarial review" in prompt
+    assert "race conditions" in prompt
+
+
 def test_discover_agents_skips_plugins_with_incompatible_constructor(tmp_path: Path) -> None:
     plugins_dir = tmp_path / "agents"
     plugins_dir.mkdir()

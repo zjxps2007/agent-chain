@@ -237,6 +237,37 @@ agent_configs:
 
 `command`는 실제 CLI 문법에 맞게 바꾸면 됩니다. 리뷰어 CLI는 JSON(`status`, `message`, `suggestions`)을 출력하면 재시도 게이트로 동작합니다.
 
+## Codex-plugin-cc style commands
+
+AgentChain now follows the same product shape as `openai/codex-plugin-cc`, but it is not tied to Claude Code or Codex. The current CLI session remains the coder; AgentChain calls a selected reviewer or starts an explicit delegated pair.
+
+Normal read-only review:
+
+```powershell
+agc review "USER REQUEST" -R kimi -t src/generated.py -w . --json .agent-chain-review.json
+```
+
+Adversarial/challenge review:
+
+```powershell
+agc challenge "USER REQUEST" -R codex -t src/generated.py -w . --focus "race conditions"
+```
+
+Background review plus job management:
+
+```powershell
+agc review "USER REQUEST" -R kimi -t src/generated.py -w . --background
+agc status
+agc result <job-id>
+agc cancel <job-id>
+```
+
+Fully delegated pair, only when explicitly requested:
+
+```powershell
+agc delegate "USER REQUEST" -C codex -R kimi -t src/generated.py -w . -m 3
+```
+
 ## 현재 CLI 세션을 코더로 쓰기
 
 Codex, Kimi, Antigravity 같은 host CLI가 이미 파일을 직접 수정하는 세션이라면 AgentChain이 코더 CLI를 다시 실행할 필요가 없습니다.

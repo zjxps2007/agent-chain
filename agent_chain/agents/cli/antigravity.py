@@ -79,6 +79,9 @@ Review the code for correctness, security, and maintainability.
 Request:
 {request}
 
+Review mode:
+{review_mode_instruction}
+
 Language: {language}
 Target file: {target_file}
 

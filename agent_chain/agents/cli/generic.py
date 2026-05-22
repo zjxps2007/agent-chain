@@ -40,6 +40,9 @@ class _ConfigurableCLICommandMixin:
             "code_snippet": code[: int(self.config.get("max_code_chars", 4000))],
             "target_file": self.target_file or "",
             "review_feedback": _review_feedback(context),
+            "review_mode_instruction": (
+                self._review_mode_instruction() if hasattr(self, "_review_mode_instruction") else ""
+            ),
             "prompt": prompt,
         }
 
@@ -129,6 +132,8 @@ Return only the generated code unless instructed to write a file.
 
 _DEFAULT_REVIEWER_PROMPT = """\
 Review the code for correctness, security, and maintainability.
+
+{review_mode_instruction}
 
 Request:
 {request}

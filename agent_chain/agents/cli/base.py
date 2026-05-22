@@ -104,6 +104,22 @@ class CLIReviewerBase(_CLIMixin, BaseReviewerAgent):
         """실행할 셸 명령어를 조립. 자식 클래스에서 구현."""
         raise NotImplementedError
 
+    def _review_mode_instruction(self) -> str:
+        mode = str(self.config.get("review_mode", "review")).strip().lower()
+        focus = str(self.config.get("review_focus", "")).strip()
+        if mode == "challenge":
+            text = (
+                "Use an adversarial review style. Challenge implementation choices, "
+                "hidden assumptions, tradeoffs, security risks, race conditions, "
+                "rollback/data-loss risks, and simpler alternatives. Stay read-only "
+                "and return concrete findings."
+            )
+        else:
+            text = "Use a normal code-review style focused on correctness, security, and maintainability."
+        if focus:
+            text += f"\nExtra focus: {focus}"
+        return text
+
     def parse_review(self, stdout: str) -> ReviewResult:
         """CLI stdout을 파싱하여 ReviewResult로 변환.
 

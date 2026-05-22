@@ -19,6 +19,21 @@ agc review "USER REQUEST" -R codex -t src/generated.py -w . --json .agent-chain-
 
 Read `.agent-chain-review.json`; apply `changes_requested` feedback and repeat until `approved`.
 
+Use challenge mode for adversarial design or risk review:
+
+```powershell
+agc challenge "USER REQUEST" -R codex -t src/generated.py -w . --focus "security and race conditions"
+```
+
+For long reviews, use background job commands:
+
+```powershell
+agc review "USER REQUEST" -R codex -t src/generated.py -w . --background
+agc status
+agc result <job-id>
+agc cancel <job-id>
+```
+
 ## Delegated Pair Commands
 
 Use these only when the user explicitly asks AgentChain to spawn both CLIs.
@@ -26,7 +41,7 @@ Use these only when the user explicitly asks AgentChain to spawn both CLIs.
 Kimi as coder, Codex as reviewer:
 
 ```powershell
-agc p "USER REQUEST" -C kimi -R codex -t src/generated.py -w .
+agc delegate "USER REQUEST" -C kimi -R codex -t src/generated.py -w .
 ```
 
 Codex as coder, Kimi as reviewer:

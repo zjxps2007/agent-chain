@@ -17,4 +17,10 @@ agc review "$ARGUMENTS" -R codex -t src/generated.py -w . --json .agent-chain-re
 agc review "$ARGUMENTS" -R antigravity -t src/generated.py -w . --json .agent-chain-review.json
 ```
 
+For adversarial review:
+
+```powershell
+agc challenge "$ARGUMENTS" -R kimi -t src/generated.py -w . --focus "security and race conditions"
+```
+
 The `agc` executable must be on `PATH`. `agent-chain` remains a long-form alias.

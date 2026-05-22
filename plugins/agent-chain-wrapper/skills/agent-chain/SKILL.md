@@ -36,10 +36,25 @@ If AgentChain is installed, prefer the short `agc` command:
 agc review "USER REQUEST" -R kimi -t src/generated.py -w . --json .agent-chain-review.json
 ```
 
+For adversarial review, use:
+
+```powershell
+agc challenge "USER REQUEST" -R kimi -t src/generated.py -w . --focus "security and rollback risk"
+```
+
+For long reviews, use background job commands:
+
+```powershell
+agc review "USER REQUEST" -R kimi -t src/generated.py -w . --background
+agc status
+agc result <job-id>
+agc cancel <job-id>
+```
+
 For fully delegated paired CLI runs, use `agc p` only when explicitly requested:
 
 ```powershell
-agc p "USER REQUEST" -C codex -R kimi -t src/generated.py -w .
+agc delegate "USER REQUEST" -C codex -R kimi -t src/generated.py -w .
 ```
 
 If the package entrypoint is not installed yet, use the repository wrapper script and pass the

@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 from .core import Agent, Context, Pipeline, _apply_agent_result, _context_output, _step_output_key
 from .integrations import (
@@ -21,6 +22,7 @@ from .integrations import (
     uses_generated_cli_config,
 )
 from .pipeline import run_pipeline
+from .jobs import JobStore, default_jobs_dir
 from .registry import resolve_agents
 from .tools import Environment
 
@@ -197,13 +199,15 @@ def cmd_run(args: argparse.Namespace) -> None:
         print(f"\n[OK] 전체 결과 JSON 저장: {json_path.resolve()}")
 
 
-def cmd_review(args: argparse.Namespace) -> int:
+def _cmd_review_sync(args: argparse.Namespace) -> int:
     config = build_cli_review_config(
         reviewer_cli=args.reviewer_cli,
         max_iterations=1,
         target_file=args.target_file,
         reviewer_model=args.reviewer_model,
         reviewer_command=args.reviewer_command,
+        review_mode=getattr(args, "review_mode", "review"),
+        review_focus=getattr(args, "focus", None),
     )
     plugins_dir = Path(args.plugins_dir) if args.plugins_dir else None
     agents = resolve_agents(config, plugins_dir=plugins_dir)
@@ -263,6 +267,108 @@ def cmd_review(args: argparse.Namespace) -> int:
     if args.fail_on_changes and ctx.review.status == "changes_requested":
         return 10
     return 0
+
+
+def _jobs_dir(args: argparse.Namespace, workspace: Path) -> Path:
+    value = getattr(args, "jobs_dir", None)
+    return Path(value).resolve() if value else default_jobs_dir(workspace)
+
+
+def _job_result_path(store: JobStore, job_id: str) -> Path:
+    return store.root / f"{job_id}.review.json"
+
+
+def _review_command_for_background(args: argparse.Namespace, job_id: str, jobs_dir: Path) -> List[str]:
+    result_path = jobs_dir / f"{job_id}.review.json"
+    command = [
+        sys.executable,
+        "-m",
+        "agent_chain",
+        args.command,
+        args.request or "Review the current implementation.",
+        "--reviewer-cli",
+        args.reviewer_cli,
+        "--workspace",
+        str(Path(args.workspace).resolve()),
+        "--language",
+        args.language,
+        "--json",
+        str(result_path),
+        "--job-id",
+        job_id,
+        "--jobs-dir",
+        str(jobs_dir),
+    ]
+    if args.target_file:
+        command.extend(["--target-file", args.target_file])
+    if args.reviewer_model:
+        command.extend(["--reviewer-model", args.reviewer_model])
+    if args.reviewer_command:
+        command.extend(["--reviewer-command", args.reviewer_command])
+    if args.plugins_dir:
+        command.extend(["--plugins-dir", args.plugins_dir])
+    if getattr(args, "focus", None):
+        command.extend(["--focus", args.focus])
+    if args.fail_on_changes:
+        command.append("--fail-on-changes")
+    return command
+
+
+def _start_background_review(args: argparse.Namespace) -> int:
+    workspace = Path(args.workspace).resolve()
+    store = JobStore(_jobs_dir(args, workspace))
+    job = store.create(
+        kind=args.command,
+        request=args.request or "Review the current implementation.",
+        workspace=workspace,
+        command=[],
+        reviewer_cli=args.reviewer_cli,
+        target_file=args.target_file,
+    )
+    command = _review_command_for_background(args, job["id"], store.root)
+    job["command"] = command
+    store.write(job)
+    paths = store.paths(job["id"])
+    with paths.stdout.open("w", encoding="utf-8") as stdout, paths.stderr.open("w", encoding="utf-8") as stderr:
+        process = subprocess.Popen(command, cwd=workspace, stdout=stdout, stderr=stderr)
+    store.update(job["id"], status="running", pid=process.pid)
+    print(f"Started {args.command} job: {job['id']}")
+    print(f"Status: agc status {job['id']} --jobs-dir {store.root}")
+    print(f"Result: agc result {job['id']} --jobs-dir {store.root}")
+    return 0
+
+
+def _read_review_json(path: Path) -> Dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def cmd_review(args: argparse.Namespace) -> int:
+    if getattr(args, "background", False):
+        return _start_background_review(args)
+
+    store: Optional[JobStore] = None
+    result_path: Optional[Path] = None
+    if getattr(args, "job_id", None):
+        workspace = Path(args.workspace).resolve()
+        store = JobStore(_jobs_dir(args, workspace))
+        result_path = _job_result_path(store, args.job_id)
+        args.json = str(result_path)
+        store.update(args.job_id, status="running")
+
+    try:
+        exit_code = _cmd_review_sync(args)
+    except Exception as exc:
+        if store is not None:
+            store.update(args.job_id, status="failed", error=str(exc), exit_code=1)
+        raise
+
+    if store is not None and result_path is not None:
+        result = _read_review_json(result_path)
+        status = result.get("status", "failed") if result else "failed"
+        store.update(args.job_id, status=status, result=result, exit_code=exit_code)
+    return exit_code
 
 
 def cmd_init(args: argparse.Namespace) -> None:
@@ -334,6 +440,69 @@ def cmd_install(args: argparse.Namespace) -> None:
             for note in notes:
                 print(f"  - {note}")
         print()
+
+
+def _status_store(args: argparse.Namespace) -> JobStore:
+    root = Path(args.jobs_dir).resolve() if args.jobs_dir else default_jobs_dir(Path(args.workspace).resolve())
+    return JobStore(root)
+
+
+def _print_job_summary(job: Dict[str, Any]) -> None:
+    print(f"{job['id']}\t{job.get('status')}\t{job.get('kind')}\t{job.get('request')}")
+
+
+def cmd_status(args: argparse.Namespace) -> None:
+    store = _status_store(args)
+    if args.job_id:
+        try:
+            _print_job_summary(store.read(args.job_id))
+        except FileNotFoundError as exc:
+            print(str(exc))
+        return
+    jobs = store.list()
+    if not jobs:
+        print(f"No jobs found in {store.root}")
+        return
+    for job in jobs:
+        _print_job_summary(job)
+
+
+def cmd_result(args: argparse.Namespace) -> None:
+    store = _status_store(args)
+    try:
+        job = store.read(args.job_id) if args.job_id else store.latest()
+    except FileNotFoundError as exc:
+        print(str(exc))
+        return
+    if args.json:
+        print(json.dumps(job, ensure_ascii=False, indent=2))
+        return
+
+    _print_job_summary(job)
+    result = job.get("result") or {}
+    if result:
+        print(f"message: {result.get('message', '')}")
+        suggestions = result.get("suggestions") or []
+        if suggestions:
+            print("suggestions:")
+            for suggestion in suggestions:
+                print(f"  - {suggestion}")
+    else:
+        print("No result recorded yet.")
+    if job.get("stdout"):
+        print(f"stdout: {job['stdout']}")
+    if job.get("stderr"):
+        print(f"stderr: {job['stderr']}")
+
+
+def cmd_cancel(args: argparse.Namespace) -> None:
+    store = _status_store(args)
+    try:
+        job = store.cancel(args.job_id)
+    except FileNotFoundError as exc:
+        print(str(exc))
+        return
+    _print_job_summary(job)
 
 
 def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
@@ -426,7 +595,7 @@ def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
     add_run_arguments(run_parser)
     pair_parser = subparsers.add_parser(
         "pair",
-        aliases=["p"],
+        aliases=["p", "delegate", "d"],
         help="CLI 코더/리뷰어 쌍을 짧게 실행합니다.",
     )
     add_run_arguments(pair_parser)
@@ -439,7 +608,7 @@ def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
 
     review_parser = subparsers.add_parser(
         "review",
-        aliases=["v"],
+        aliases=["v", "challenge"],
         help="현재 CLI 세션이 만든 결과를 외부 리뷰어 CLI로 검토합니다.",
     )
     review_parser.add_argument(
@@ -505,6 +674,25 @@ def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
         help="changes_requested이면 exit code 10으로 종료합니다.",
     )
 
+    review_parser.add_argument(
+        "--focus",
+        default=None,
+        help="Extra review focus, especially useful for challenge mode.",
+    )
+    review_parser.add_argument(
+        "--background",
+        action="store_true",
+        help="Start the review as a background job and return immediately.",
+    )
+    review_parser.add_argument(
+        "--jobs-dir",
+        default=None,
+        metavar="DIR",
+        help="Directory for AgentChain background job metadata.",
+    )
+    review_parser.add_argument("--job-id", default=None, help=argparse.SUPPRESS)
+    review_parser.set_defaults(review_mode="review")
+
     # init
     init_parser = subparsers.add_parser(
         "init",
@@ -544,6 +732,31 @@ def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
         help="Print setup metadata as JSON.",
     )
 
+    def add_job_reader_args(job_parser: argparse.ArgumentParser, *, job_required: bool = False) -> None:
+        job_parser.add_argument("job_id", nargs=None if job_required else "?", default=None)
+        job_parser.add_argument(
+            "--workspace",
+            "-w",
+            default=".",
+            help="Workspace used to locate .agent-chain/jobs when --jobs-dir is omitted.",
+        )
+        job_parser.add_argument(
+            "--jobs-dir",
+            default=None,
+            metavar="DIR",
+            help="Directory for AgentChain background job metadata.",
+        )
+
+    status_parser = subparsers.add_parser("status", help="List background review/delegate jobs.")
+    add_job_reader_args(status_parser)
+
+    result_parser = subparsers.add_parser("result", help="Show the latest or selected job result.")
+    add_job_reader_args(result_parser)
+    result_parser.add_argument("--json", action="store_true", help="Print raw job metadata as JSON.")
+
+    cancel_parser = subparsers.add_parser("cancel", help="Cancel a running background job.")
+    add_job_reader_args(cancel_parser, job_required=True)
+
     # web UI
     web_parser = subparsers.add_parser(
         "web",
@@ -570,14 +783,22 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if args.command in {"run", "r", "pair", "p"}:
+    if args.command in {"run", "r", "pair", "p", "delegate", "d"}:
         cmd_run(args)
-    elif args.command in {"review", "v"}:
+    elif args.command in {"review", "v", "challenge"}:
+        if args.command == "challenge":
+            args.review_mode = "challenge"
         return cmd_review(args)
     elif args.command in {"init", "i"}:
         cmd_init(args)
     elif args.command in {"install", "setup"}:
         cmd_install(args)
+    elif args.command == "status":
+        cmd_status(args)
+    elif args.command == "result":
+        cmd_result(args)
+    elif args.command == "cancel":
+        cmd_cancel(args)
     elif args.command in {"web", "ui"}:
         from .web import serve
 

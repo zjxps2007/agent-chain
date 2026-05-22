@@ -56,6 +56,19 @@ def test_build_cli_review_config_defaults_to_kimi_reviewer() -> None:
     }
 
 
+def test_build_cli_review_config_can_set_challenge_mode() -> None:
+    config = build_cli_review_config(
+        reviewer_cli="codex",
+        target_file="src/generated.py",
+        review_mode="challenge",
+        review_focus="race conditions",
+    )
+
+    assert config["steps"][0]["agent"] == "codex_reviewer"
+    assert config["agent_configs"]["codex_reviewer"]["review_mode"] == "challenge"
+    assert config["agent_configs"]["codex_reviewer"]["review_focus"] == "race conditions"
+
+
 def test_prebuilt_codex_marketplace_points_to_plugin() -> None:
     marketplace_path = Path("integrations/codex/.agents/plugins/marketplace.json")
     marketplace = json.loads(marketplace_path.read_text(encoding="utf-8"))

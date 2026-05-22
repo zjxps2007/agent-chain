@@ -23,6 +23,7 @@ from .integrations import (
     build_cli_review_config,
     uses_generated_cli_config,
 )
+from .jobs import JobStore, default_jobs_dir
 from .pipeline import run_pipeline
 from .registry import resolve_agents
 from .tools.env import Environment, ShellResult
@@ -214,6 +215,8 @@ def _build_config(payload: Dict[str, Any]) -> tuple[Dict[str, Any], str]:
             target_file=_clean_text(payload.get("target_file")),
             reviewer_model=_clean_text(payload.get("reviewer_model")),
             reviewer_command=_clean_text(payload.get("reviewer_command")),
+            review_mode=_clean_text(payload.get("review_mode")) or "review",
+            review_focus=_clean_text(payload.get("focus")),
         )
         return config, f"review:{reviewer_cli}"
 
@@ -312,6 +315,7 @@ def _run_worker(record: RunRecord, payload: Dict[str, Any]) -> None:
                 "workspace": str(workspace),
                 "target_file": _clean_text(payload.get("target_file")),
                 "reviewer_cli": _clean_text(payload.get("reviewer_cli")) or "kimi",
+                "review_mode": _clean_text(payload.get("review_mode")) or "review",
             }
             json_path.write_text(
                 json.dumps(review_payload, ensure_ascii=False, indent=2),
@@ -365,6 +369,19 @@ class AgentChainHandler(BaseHTTPRequestHandler):
         if path == "/":
             self._send_html(INDEX_HTML)
             return
+        if path == "/api/jobs":
+            store = JobStore(default_jobs_dir(Path.cwd()))
+            self._send_json({"jobs": store.list()})
+            return
+        if path.startswith("/api/jobs/"):
+            job_id = path.split("/")[3]
+            try:
+                job = JobStore(default_jobs_dir(Path.cwd())).read(job_id)
+            except FileNotFoundError:
+                self._send_json({"error": "job not found"}, HTTPStatus.NOT_FOUND)
+                return
+            self._send_json({"job": job})
+            return
         if path == "/api/runs":
             self._send_json({"runs": self.server.store.list()})
             return
@@ -385,6 +402,17 @@ class AgentChainHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
+        path = parsed.path.rstrip("/") or "/"
+        if path.startswith("/api/jobs/") and path.endswith("/cancel"):
+            job_id = path.split("/")[3]
+            try:
+                job = JobStore(default_jobs_dir(Path.cwd())).cancel(job_id)
+            except FileNotFoundError:
+                self._send_json({"error": "job not found"}, HTTPStatus.NOT_FOUND)
+                return
+            self._send_json({"job": job})
+            return
+
         if parsed.path.rstrip("/") != "/api/runs":
             self._send_json({"error": "not found"}, HTTPStatus.NOT_FOUND)
             return
@@ -968,6 +996,12 @@ INDEX_HTML = r"""<!doctype html>
         <label for="reviewer">Reviewer Agent</label>
         <select id="reviewer"></select>
 
+        <label for="reviewMode">Review Mode</label>
+        <select id="reviewMode">
+          <option value="review">Normal Review</option>
+          <option value="challenge">Challenge Review</option>
+        </select>
+
         <label for="target">Target File</label>
         <input id="target" value="src/generated.py">
 
@@ -993,6 +1027,8 @@ INDEX_HTML = r"""<!doctype html>
         </div>
         <label for="jsonPath">Review JSON</label>
         <input id="jsonPath" value=".agent-chain-review.json">
+        <label for="focus">Focus</label>
+        <input id="focus" placeholder="Optional challenge focus">
         <label for="pluginsDir">Plugins Directory</label>
         <input id="pluginsDir" placeholder="Optional plugins path">
         <div class="controls">
@@ -1017,6 +1053,10 @@ INDEX_HTML = r"""<!doctype html>
         <div class="panel">
           <h2>Review Output</h2>
           <div id="review" class="review"><span class="muted">No review feedback received yet.</span></div>
+        </div>
+        <div class="panel">
+          <h2>Background Jobs</h2>
+          <div id="jobs" class="timeline"></div>
         </div>
       </div>
       <div class="bottom">
@@ -1074,10 +1114,12 @@ INDEX_HTML = r"""<!doctype html>
         workspace: $("workspace").value,
         language: $("language").value,
         reviewer_cli: $("reviewer").value,
+        review_mode: $("reviewMode").value,
         target_file: $("target").value,
         reviewer_model: $("reviewerModel").value,
         reviewer_command: $("reviewerCommand").value,
         json: $("jsonPath").value,
+        focus: $("focus").value,
         plugins_dir: $("pluginsDir").value
       };
     }
@@ -1104,6 +1146,34 @@ INDEX_HTML = r"""<!doctype html>
         row.appendChild(main);
         row.appendChild(status);
         timeline.appendChild(row);
+      }
+    }
+
+    async function loadJobs() {
+      try {
+        const response = await fetch("/api/jobs");
+        if (!response.ok) return;
+        const data = await response.json();
+        const jobs = $("jobs");
+        jobs.textContent = "";
+        for (const job of data.jobs || []) {
+          const row = document.createElement("div");
+          row.className = `step ${["approved", "changes_requested", "comment"].includes(job.status) ? "done" : job.status === "running" ? "running" : ""}`;
+          const badge = document.createElement("span");
+          badge.className = `badge ${job.status === "approved" ? "approved" : job.status === "changes_requested" ? "changes_requested" : job.status === "running" ? "running" : ""}`;
+          badge.textContent = job.status || "-";
+          const main = document.createElement("div");
+          main.innerHTML = `<strong>${escapeHtml(job.id)}</strong><div class="muted" style="font-size: 11px; margin-top: 2px;">${escapeHtml(job.kind || "")} · ${escapeHtml(job.reviewer_cli || "")}</div>`;
+          const status = document.createElement("span");
+          status.className = "muted";
+          status.textContent = job.target_file || "";
+          row.appendChild(badge);
+          row.appendChild(main);
+          row.appendChild(status);
+          jobs.appendChild(row);
+        }
+      } catch (_) {
+        // Ignore transient polling errors; live run events remain independent.
       }
     }
 
@@ -1215,6 +1285,8 @@ INDEX_HTML = r"""<!doctype html>
         state.source.addEventListener(name, (msg) => handleEvent(JSON.parse(msg.data)));
       });
     };
+    loadJobs();
+    setInterval(loadJobs, 5000);
   </script>
 </body>
 </html>

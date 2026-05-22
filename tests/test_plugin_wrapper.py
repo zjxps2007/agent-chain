@@ -127,6 +127,33 @@ def test_agent_chain_wrapper_can_force_pair_mode(tmp_path: Path) -> None:
     ]
 
 
+def test_agent_chain_wrapper_can_build_challenge_review_command(tmp_path: Path) -> None:
+    wrapper = _load_wrapper_module()
+    args = wrapper.parse_args(
+        [
+            "work on this",
+            "--workspace",
+            str(tmp_path),
+            "--reviewer-cli",
+            "codex",
+            "--target-file",
+            "src/generated.py",
+            "--challenge",
+            "--focus",
+            "race conditions",
+            "--background",
+        ]
+    )
+
+    command, _workspace, _env, cleanup_paths = wrapper.build_command(args)
+
+    assert not cleanup_paths
+    assert "challenge" in command
+    assert "--focus" in command
+    assert "race conditions" in command
+    assert "--background" in command
+
+
 def test_agent_chain_wrapper_generates_cli_pair_config(tmp_path: Path) -> None:
     wrapper = _load_wrapper_module()
     args = wrapper.parse_args(

@@ -72,6 +72,7 @@ class CodexCLIReviewer(CLIReviewerBase):
         target = self.target_file or "the current code"
         prompt = (
             f"Original request:\n{context.request}\n\n"
+            f"Review mode:\n{self._review_mode_instruction()}\n\n"
             f"Review {target} for code quality, bugs, and security issues. "
             f"Return the result as JSON:\n"
             f'{{"status": "approved" or "changes_requested", '

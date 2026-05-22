@@ -91,6 +91,8 @@ def build_cli_review_config(
     target_file: Optional[str] = None,
     reviewer_model: Optional[str] = None,
     reviewer_command: Optional[str] = None,
+    review_mode: Optional[str] = None,
+    review_focus: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Build an AgentChain config for a reviewer-only host-session flow."""
     reviewer_cli = reviewer_cli or "kimi"
@@ -118,6 +120,10 @@ def build_cli_review_config(
         reviewer_config["model"] = reviewer_model
     if reviewer_command:
         reviewer_config["cli_command"] = reviewer_command
+    if review_mode:
+        reviewer_config["review_mode"] = review_mode
+    if review_focus:
+        reviewer_config["review_focus"] = review_focus
 
     return config
 

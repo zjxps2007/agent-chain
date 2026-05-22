@@ -20,7 +20,10 @@ param(
     [string]$Output,
     [string]$Json,
     [string]$PluginsDir,
+    [string]$Focus,
     [switch]$Pair,
+    [switch]$Challenge,
+    [switch]$Background,
     [switch]$DryRun
 )
 
@@ -40,7 +43,10 @@ if ($MaxIterations -gt 0) { $Args += @("--max-iterations", [string]$MaxIteration
 if ($Output) { $Args += @("--output", $Output) }
 if ($Json) { $Args += @("--json", $Json) }
 if ($PluginsDir) { $Args += @("--plugins-dir", $PluginsDir) }
+if ($Focus) { $Args += @("--focus", $Focus) }
 if ($Pair) { $Args += "--pair" }
+if ($Challenge) { $Args += "--challenge" }
+if ($Background) { $Args += "--background" }
 if ($DryRun) { $Args += "--dry-run" }
 
 uv run python @Args

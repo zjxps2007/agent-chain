@@ -155,7 +155,7 @@ def build_command(args: argparse.Namespace) -> tuple[list[str], Path, dict[str, 
             _default_python(repo_root),
             "-m",
             "agent_chain",
-            "review",
+            "challenge" if args.challenge else "review",
             args.request,
             "--reviewer-cli",
             args.reviewer_cli or "kimi",
@@ -172,6 +172,10 @@ def build_command(args: argparse.Namespace) -> tuple[list[str], Path, dict[str, 
             command.extend(["--reviewer-command", args.reviewer_command])
         if args.json:
             command.extend(["--json", args.json])
+        if args.focus:
+            command.extend(["--focus", args.focus])
+        if args.background:
+            command.append("--background")
         if args.plugins_dir:
             command.extend(["--plugins-dir", str(Path(args.plugins_dir).resolve())])
         return command, workspace, _env_with_repo(repo_root), []
@@ -240,6 +244,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--reviewer-model", default=None, help="Model name for the reviewer CLI, when supported.")
     parser.add_argument("--coder-command", default=None, help="Executable path/name for the coder CLI.")
     parser.add_argument("--reviewer-command", default=None, help="Executable path/name for the reviewer CLI.")
+    parser.add_argument("--challenge", action="store_true", help="Use adversarial challenge review mode.")
+    parser.add_argument("--focus", default=None, help="Extra review focus for challenge/review mode.")
+    parser.add_argument("--background", action="store_true", help="Run review mode as a background job.")
     parser.add_argument(
         "--workspace",
         default=".",

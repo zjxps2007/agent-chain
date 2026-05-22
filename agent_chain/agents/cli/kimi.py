@@ -92,6 +92,8 @@ class KimiCLIReviewer(CLIReviewerBase):
             f"\n[원래 요청]\n{context.request}\n"
         )
 
+        prompt += f"\n[Review mode]\n{self._review_mode_instruction()}\n"
+
         if code_snippet:
             prompt += f"\n[코드]\n{code_snippet}"
         else:

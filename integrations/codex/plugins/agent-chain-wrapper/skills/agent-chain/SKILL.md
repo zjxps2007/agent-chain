@@ -28,6 +28,21 @@ Use this pattern for any host CLI:
 agc review "USER REQUEST" -R <REVIEWER_CLI> -t <TARGET_FILE> -w . --json .agent-chain-review.json
 ```
 
+Use challenge mode when the user asks for an adversarial review, design pressure test, or risk-focused critique:
+
+```powershell
+agc challenge "USER REQUEST" -R kimi -t src/generated.py -w . --focus "security and rollback risk"
+```
+
+For long reviews, use background job commands:
+
+```powershell
+agc review "USER REQUEST" -R kimi -t src/generated.py -w . --background
+agc status
+agc result <job-id>
+agc cancel <job-id>
+```
+
 ## Fully Delegated Pair Commands
 
 Use these only when the user explicitly wants AgentChain to spawn both coder and reviewer CLIs.
@@ -35,7 +50,7 @@ Use these only when the user explicitly wants AgentChain to spawn both coder and
 Codex as subprocess coder, Kimi as reviewer:
 
 ```powershell
-agc p "USER REQUEST" -C codex -R kimi -t src/generated.py -w .
+agc delegate "USER REQUEST" -C codex -R kimi -t src/generated.py -w .
 ```
 
 Kimi as coder, Codex as reviewer:
