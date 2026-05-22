@@ -6,8 +6,8 @@
 
 - **구조적 인터페이스 기반 확장**: `run(context)`를 구현하면 특정 베이스 클래스 없이도 어떤 LLM/규칙 엔진이든 연동 가능
 - **선언적 파이프라인**: YAML/JSON으로 에이전트 조합과 규칙을 정의, 코드 수정 없이 워크플로우 변경
-- **자동 Retry**: 검토에서 수정 요청(`changes_requested`) 시 설정된 최대 횟수 내에서 자동 재시도
-- **Context 공유**: 코드, 리뷰 결과, 히스토리가 한 객체에 누적되어 에이전트 간 상태 전달이 명확
+- **자동 재시도**: 검토에서 수정 요청(`changes_requested`) 시 설정된 최대 횟수 내에서 자동 재시도
+- **컨텍스트 공유**: 코드, 리뷰 결과, 히스토리가 한 객체에 누적되어 에이전트 간 상태 전달이 명확
 - **CLI 지원**: 터미널에서 바로 실행 가능
 
 ## 빠른 시작
@@ -108,33 +108,30 @@ pip install -e ".[dev]"
 pytest
 ```
 
-## CLI skill/plugin setup
+## CLI 스킬/플러그인 설정
 
-Use `agc install` to set up the prebuilt host integration files. The default
-flow for every host is: the current CLI session writes code, then AgentChain
-calls only the reviewer with `agc review`.
+`agc setup`으로 미리 만들어 둔 호스트 통합 파일을 설정할 수 있습니다. 모든 호스트의 기본 흐름은 현재 CLI 세션이 코드를 작성하고, AgentChain은 `agc review`로 리뷰어만 호출하는 방식입니다.
 
 ```powershell
-agc install codex
-agc install kimi
-agc install antigravity
-agc install all
+agc setup codex
+agc setup kimi
+agc setup antigravity
+agc setup all
 ```
 
-If you want to copy the prebuilt files somewhere first:
+미리 만들어 둔 파일을 다른 위치로 먼저 복사하려면:
 
 ```powershell
-agc install all --copy-to D:\Tools\agent-chain-integrations
+agc setup all --copy-to D:\Tools\agent-chain-integrations
 ```
 
-Fully delegated runs are still available with `agc p`, but only use them when
-you explicitly want AgentChain to spawn both the coder and reviewer CLIs.
+완전 위임 실행은 `agc delegate` 또는 `agc p`로 사용할 수 있습니다. AgentChain이 코더 CLI와 리뷰어 CLI를 모두 직접 실행해야 할 때만 이 방식을 사용하세요.
 
 ## 실시간 웹 UI
 
-`agc ui`는 review 중심 화면입니다. 현재 CLI 세션이 직접 코딩하고, UI는 외부 reviewer CLI 호출과 그 결과만 실시간으로 보여줍니다.
+`agc ui`는 리뷰 중심 화면입니다. 현재 CLI 세션이 직접 코딩하고, UI는 외부 리뷰어 CLI 호출과 그 결과만 실시간으로 보여줍니다.
 
-로컬 웹 대시보드를 실행하면 review 실행 상황을 이벤트 스트림으로 볼 수 있습니다.
+로컬 웹 대시보드를 실행하면 리뷰 실행 상황을 이벤트 스트림으로 볼 수 있습니다.
 
 ```powershell
 agc ui
@@ -144,10 +141,10 @@ agc ui
 
 웹 UI에서 볼 수 있는 항목:
 
-- reviewer 실행 상태
-- review status, message, suggestions
-- line comments와 review JSON
-- 외부 reviewer CLI stdout/stderr 스트림
+- 리뷰어 실행 상태
+- 리뷰 상태, 메시지, 제안
+- 라인 코멘트와 리뷰 JSON
+- 외부 리뷰어 CLI stdout/stderr 스트림
 
 포트를 바꿀 때:
 
@@ -237,41 +234,10 @@ agent_configs:
 
 `command`는 실제 CLI 문법에 맞게 바꾸면 됩니다. 리뷰어 CLI는 JSON(`status`, `message`, `suggestions`)을 출력하면 재시도 게이트로 동작합니다.
 
-## Codex-plugin-cc style commands
-
-AgentChain now follows the same product shape as `openai/codex-plugin-cc`, but it is not tied to Claude Code or Codex. The current CLI session remains the coder; AgentChain calls a selected reviewer or starts an explicit delegated pair.
-
-Normal read-only review:
-
-```powershell
-agc review "USER REQUEST" -R kimi -t src/generated.py -w . --json .agent-chain-review.json
-```
-
-Adversarial/challenge review:
-
-```powershell
-agc challenge "USER REQUEST" -R codex -t src/generated.py -w . --focus "race conditions"
-```
-
-Background review plus job management:
-
-```powershell
-agc review "USER REQUEST" -R kimi -t src/generated.py -w . --background
-agc status
-agc result <job-id>
-agc cancel <job-id>
-```
-
-Fully delegated pair, only when explicitly requested:
-
-```powershell
-agc delegate "USER REQUEST" -C codex -R kimi -t src/generated.py -w . -m 3
-```
-
 ## 현재 CLI 세션을 코더로 쓰기
 
-Codex, Kimi, Antigravity 같은 host CLI가 이미 파일을 직접 수정하는 세션이라면 AgentChain이 코더 CLI를 다시 실행할 필요가 없습니다.
-이때는 host CLI가 코딩하고, AgentChain은 외부 리뷰어만 호출합니다.
+Codex, Kimi, Antigravity 같은 호스트 CLI가 이미 파일을 직접 수정하는 세션이라면 AgentChain이 코더 CLI를 다시 실행할 필요가 없습니다.
+이때는 호스트 CLI가 코딩하고, AgentChain은 외부 리뷰어만 호출합니다.
 
 ```powershell
 agc review "요청문" -R kimi -t src/generated.py -w . --json .agent-chain-review.json
@@ -290,16 +256,16 @@ agc review "요청문" -R kimi -t src/generated.py -w . --json .agent-chain-revi
 Get-Content src/generated.py -Raw | agc review "요청문" -R kimi --stdin --json .agent-chain-review.json
 ```
 
-## Codex 플러그인/스킬 wrapper
+## Codex 플러그인/스킬 래퍼
 
-이 repo에는 Codex에서 설치할 수 있는 로컬 플러그인 wrapper가 포함되어 있습니다.
+이 저장소에는 Codex에서 설치할 수 있는 로컬 플러그인 래퍼가 포함되어 있습니다.
 
 ```powershell
 codex plugin marketplace add <AGENT_CHAIN_ROOT>
 codex plugin add agent-chain-wrapper@agent-chain-local
 ```
 
-설치 후 Codex가 `agent-chain` 스킬을 사용할 수 있고, 실제 실행은 wrapper 스크립트가 담당합니다.
+설치 후 Codex가 `agent-chain` 스킬을 사용할 수 있고, 실제 실행은 래퍼 스크립트가 담당합니다.
 
 패키지를 설치한 환경에서는 짧은 명령을 바로 사용할 수 있습니다.
 
@@ -307,7 +273,7 @@ codex plugin add agent-chain-wrapper@agent-chain-local
 agc p "요청문" -C codex -R kimi -t src/generated.py -w .
 ```
 
-wrapper 스크립트를 직접 호출해야 하는 경우에는 해당 프로젝트 경로를 넘깁니다.
+래퍼 스크립트를 직접 호출해야 하는 경우에는 해당 프로젝트 경로를 넘깁니다.
 
 ```powershell
 uv run python <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\scripts\agent_chain_wrapper.py "요청문" --config <PROJECT_ROOT>\.agent-chain.yaml --workspace <PROJECT_ROOT>
@@ -315,7 +281,7 @@ uv run python <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\scripts\agent_chain
 
 Codex+Antigravity 기본 조합 템플릿은 `plugins/agent-chain-wrapper/configs/codex-antigravity.yaml`에 있습니다.
 
-Codex/Kimi/Antigravity는 wrapper에서 바로 조합할 수도 있습니다.
+Codex/Kimi/Antigravity는 래퍼에서 바로 조합할 수도 있습니다.
 
 ```powershell
 agc p "요청문" -C codex -R antigravity -t src/generated.py
@@ -323,7 +289,7 @@ agc p "요청문" -C kimi -R codex -t src/generated.py
 agc p "요청문" -C antigravity -R kimi -t src/generated.py
 ```
 
-지원하는 built-in CLI worker:
+지원하는 내장 CLI 워커:
 
 - `codex`
 - `kimi`
@@ -344,23 +310,23 @@ agc p "요청문" -C antigravity -R kimi -t src/generated.py
 agc p "요청문" -P kimi-codex -w .
 ```
 
-Kimi를 host CLI로 쓸 때는 같은 skill 디렉터리를 넘길 수 있습니다.
+Kimi를 호스트 CLI로 쓸 때는 같은 스킬 디렉터리를 넘길 수 있습니다.
 
 ```powershell
-kimi --skills-dir <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\skills --prompt "agent-chain skill로 이 요청을 처리해줘."
+kimi --skills-dir <AGENT_CHAIN_ROOT>\plugins\agent-chain-wrapper\skills --prompt "agent-chain 스킬로 이 요청을 처리해줘."
 ```
 
-## 사전 생성 integration pack
+## 사전 생성 통합 패키지
 
 배포용으로는 `integrations/` 아래의 미리 만들어진 파일을 사용할 수 있습니다. 이 방식은
-`agent-chain` 실행 파일이 PATH에 있다고 가정하고, 각 CLI가 읽는 skill/plugin 파일만 등록합니다.
+`agent-chain` 실행 파일이 PATH에 있다고 가정하고, 각 CLI가 읽는 스킬/플러그인 파일만 등록합니다.
 
 ```text
 integrations/
-  codex/        # Codex local marketplace + plugin
-  kimi/         # Kimi skills-dir
-  antigravity/  # Antigravity skill/command templates
-  common/       # 공통 profile config와 thin wrapper scripts
+  codex/        # Codex 로컬 마켓플레이스와 플러그인
+  kimi/         # Kimi 스킬 디렉터리
+  antigravity/  # Antigravity 스킬/명령 템플릿
+  common/       # 공통 프로필 설정과 얇은 래퍼 스크립트
 ```
 
 Codex:
@@ -383,7 +349,7 @@ integrations/antigravity/skills
 integrations/antigravity/commands
 ```
 
-위 파일들을 Antigravity의 skill/custom-command 경로에 등록하면 됩니다. Antigravity 실행 파일명이 다르면
+위 파일들을 Antigravity의 스킬/사용자 명령 경로에 등록하면 됩니다. Antigravity 실행 파일명이 다르면
 `--coder-command` 또는 `--reviewer-command`로 실제 경로를 넘기세요.
 
 ## 아키텍처
@@ -425,5 +391,5 @@ tests/
 
 1. **멀티 리뷰어**: 보안 리뷰어, 성능 리뷰어, 스타일 리뷰어를 병렬/순차로 연결
 2. **멀티 코더**: A 코더가 생성 → B 코더가 리팩토링 → 리뷰어가 검토
-3. **MCP 연동**: Kimi CLI의 도구를 에이전트 낶부에서 호출하도록 `run()` 메서드에 통합
+3. **MCP 연동**: Kimi CLI의 도구를 에이전트 내부에서 호출하도록 `run()` 메서드에 통합
 4. **멀티 실행 큐**: 여러 AgentChain run을 큐잉하고 웹 UI에서 비교
