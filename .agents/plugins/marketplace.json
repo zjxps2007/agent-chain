@@ -1,7 +1,7 @@
 {
-  "name": "agent-chain-local",
+  "name": "agent-chain",
   "interface": {
-    "displayName": "AgentChain Local"
+    "displayName": "AgentChain"
   },
   "plugins": [
     {

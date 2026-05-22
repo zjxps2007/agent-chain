@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -146,6 +147,27 @@ def integration_assets_root(repo_root: Optional[Path] = None) -> Path:
     return assets
 
 
+def repository_root() -> Path:
+    """Return the checked-out repository root when running from source."""
+    return Path(__file__).resolve().parents[1]
+
+
+def codex_marketplace_root(repo_root: Optional[Path] = None) -> Path:
+    """Return the preferred Codex marketplace root for this checkout."""
+    root = repo_root or repository_root()
+    if (root / ".agents" / "plugins" / "marketplace.json").exists():
+        return root
+    return integration_assets_root(root) / "codex"
+
+
+def _marketplace_name(root: Path, default: str) -> str:
+    marketplace_path = root / ".agents" / "plugins" / "marketplace.json"
+    if not marketplace_path.exists():
+        return default
+    data = json.loads(marketplace_path.read_text(encoding="utf-8"))
+    return str(data.get("name") or default)
+
+
 def copy_integration_pack(
     host: str,
     destination: Path,
@@ -170,13 +192,14 @@ def copy_integration_pack(
 def build_integration_setup(host: str, host_root: Path) -> Dict[str, Any]:
     """Return setup instructions for one CLI host integration pack."""
     if host == "codex":
+        marketplace_name = _marketplace_name(host_root, "agent-chain-local")
         return {
             "host": host,
             "mode": "host-session-review",
             "path": str(host_root),
             "commands": [
                 f"codex plugin marketplace add {host_root}",
-                "codex plugin add agent-chain-wrapper@agent-chain-local",
+                f"codex plugin add agent-chain-wrapper@{marketplace_name}",
             ],
             "notes": [
                 "Codex remains the coder. The plugin skill calls `agc review` for external review by default.",

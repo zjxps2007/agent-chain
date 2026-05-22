@@ -12,16 +12,49 @@
 
 ## 빠른 시작
 
-### 1. 프로젝트 초기화
+### 1. 설치
+
+로컬 체크아웃에서 바로 테스트할 때:
 
 ```bash
 pip install -e .
+```
+
+GitHub 저장소에서 전역 명령으로 설치할 때:
+
+```bash
+uv tool install git+https://github.com/zjxps2007/agent-chain.git
+```
+
+`uv tool install` 대신 `pipx install git+https://github.com/zjxps2007/agent-chain.git`를 사용해도 됩니다. 어떤 방식을 쓰든 `agc` 명령이 PATH에서 실행되어야 합니다.
+
+### 2. Codex 플러그인 등록
+
+로컬 체크아웃에서 등록할 때:
+
+```powershell
+codex plugin marketplace add .
+codex plugin add agent-chain-wrapper@agent-chain
+```
+
+GitHub 저장소를 직접 등록할 때:
+
+```powershell
+codex plugin marketplace add zjxps2007/agent-chain
+codex plugin add agent-chain-wrapper@agent-chain
+```
+
+등록 후 Codex 세션에서 `agent-chain` 스킬을 사용하면 현재 Codex가 코딩하고, AgentChain이 선택한 리뷰어 CLI를 호출합니다.
+
+### 3. 프로젝트 초기화
+
+```bash
 agc i
 ```
 
 `config.yaml`과 `custom_agents.py` 템플릿이 생성됩니다.
 
-### 2. 파이프라인 실행
+### 4. 파이프라인 실행
 
 ```bash
 agc r "사용자 입력을 검증하는 함수를 작성해줘"
@@ -77,9 +110,9 @@ agc r -m 5 "복잡한 알고리즘 구현"
 agc r -o src/solution.py --json result.json "데이터 처리 파이프라인"
 ```
 
-## 설치 (선택)
+## 수동 설치와 개발 환경
 
-`agent-chain`과 짧은 별칭 `agc` 명령어를 글로벌로 등록하려면:
+소스 체크아웃에서 개발 모드로 설치하려면:
 
 ```bash
 pip install -e .
@@ -110,7 +143,7 @@ pytest
 
 ## CLI 스킬/플러그인 설정
 
-`agc setup`으로 미리 만들어 둔 호스트 통합 파일을 설정할 수 있습니다. 모든 호스트의 기본 흐름은 현재 CLI 세션이 코드를 작성하고, AgentChain은 `agc review`로 리뷰어만 호출하는 방식입니다.
+`agc setup`은 호스트별 등록 명령을 확인하거나, Kimi/Antigravity용 스킬 파일을 다른 위치로 복사할 때 사용합니다. 모든 호스트의 기본 흐름은 현재 CLI 세션이 코드를 작성하고, AgentChain은 `agc review`로 리뷰어만 호출하는 방식입니다.
 
 ```powershell
 agc setup codex
@@ -258,11 +291,11 @@ Get-Content src/generated.py -Raw | agc review "요청문" -R kimi --stdin --jso
 
 ## Codex 플러그인/스킬 래퍼
 
-이 저장소에는 Codex에서 설치할 수 있는 로컬 플러그인 래퍼가 포함되어 있습니다.
+이 저장소 루트는 Codex 플러그인 marketplace로 바로 등록할 수 있습니다.
 
 ```powershell
 codex plugin marketplace add <AGENT_CHAIN_ROOT>
-codex plugin add agent-chain-wrapper@agent-chain-local
+codex plugin add agent-chain-wrapper@agent-chain
 ```
 
 설치 후 Codex가 `agent-chain` 스킬을 사용할 수 있고, 실제 실행은 래퍼 스크립트가 담당합니다.
@@ -329,11 +362,11 @@ integrations/
   common/       # 공통 프로필 설정과 얇은 래퍼 스크립트
 ```
 
-Codex:
+Codex는 저장소 루트를 바로 등록하는 방식을 권장합니다.
 
 ```powershell
-codex plugin marketplace add <AGENT_CHAIN_ROOT>\integrations\codex
-codex plugin add agent-chain-wrapper@agent-chain-local
+codex plugin marketplace add <AGENT_CHAIN_ROOT>
+codex plugin add agent-chain-wrapper@agent-chain
 ```
 
 Kimi:

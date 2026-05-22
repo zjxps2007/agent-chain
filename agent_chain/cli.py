@@ -17,6 +17,7 @@ from .integrations import (
     build_cli_pair_config,
     build_integration_setup,
     build_cli_review_config,
+    codex_marketplace_root,
     copy_integration_pack,
     integration_assets_root,
     uses_generated_cli_config,
@@ -413,6 +414,8 @@ def cmd_install(args: argparse.Namespace) -> None:
 
     for host in hosts:
         host_root = assets_root / host
+        if host == "codex" and not copy_root:
+            host_root = codex_marketplace_root()
         if copy_root:
             host_root = copy_integration_pack(
                 host,

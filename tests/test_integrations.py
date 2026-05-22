@@ -9,6 +9,7 @@ from agent_chain.integrations import (
     build_cli_pair_config,
     build_cli_review_config,
     build_integration_setup,
+    codex_marketplace_root,
     copy_integration_pack,
 )
 
@@ -81,6 +82,18 @@ def test_prebuilt_codex_marketplace_points_to_plugin() -> None:
     assert (Path("integrations/codex") / plugin_entry["source"]["path"]).resolve().exists()
 
 
+def test_repository_root_is_codex_marketplace() -> None:
+    marketplace_path = Path(".agents/plugins/marketplace.json")
+    marketplace = json.loads(marketplace_path.read_text(encoding="utf-8"))
+    plugin_entry = marketplace["plugins"][0]
+
+    assert marketplace["name"] == "agent-chain"
+    assert plugin_entry["name"] == "agent-chain-wrapper"
+    assert plugin_entry["source"]["path"] == "./plugins/agent-chain-wrapper"
+    assert (Path(".") / plugin_entry["source"]["path"]).resolve().exists()
+    assert codex_marketplace_root() == Path(".").resolve()
+
+
 def test_prebuilt_common_configs_are_valid_profiles() -> None:
     expected = {
         "codex-antigravity": ("codex_coder", "antigravity_reviewer"),
@@ -113,12 +126,12 @@ def test_prebuilt_skill_files_call_agent_chain_binary() -> None:
 
 
 def test_integration_setup_defaults_to_host_session_review() -> None:
-    setup = build_integration_setup("codex", Path("integrations/codex").resolve())
+    setup = build_integration_setup("codex", Path(".").resolve())
 
     assert setup["mode"] == "host-session-review"
     assert setup["commands"] == [
-        f"codex plugin marketplace add {Path('integrations/codex').resolve()}",
-        "codex plugin add agent-chain-wrapper@agent-chain-local",
+        f"codex plugin marketplace add {Path('.').resolve()}",
+        "codex plugin add agent-chain-wrapper@agent-chain",
     ]
     assert any("agc review" in note for note in setup["notes"])
 
