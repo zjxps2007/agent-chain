@@ -75,6 +75,17 @@ def test_ui_alias_parses() -> None:
     assert args.port == 9000
 
 
+def test_install_alias_parses_for_cli_hosts() -> None:
+    parser = build_parser(prog="agc")
+    args = parser.parse_args(["install", "codex", "--copy-to", "dist", "--force", "--json"])
+
+    assert args.command == "install"
+    assert args.target == "codex"
+    assert args.copy_to == "dist"
+    assert args.force is True
+    assert args.json is True
+
+
 def test_review_alias_parses_for_host_session_flow() -> None:
     parser = build_parser(prog="agc")
     args = parser.parse_args(

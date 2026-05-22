@@ -5,7 +5,12 @@ from pathlib import Path
 
 import yaml
 
-from agent_chain.integrations import build_cli_pair_config, build_cli_review_config
+from agent_chain.integrations import (
+    build_cli_pair_config,
+    build_cli_review_config,
+    build_integration_setup,
+    copy_integration_pack,
+)
 
 
 def test_build_cli_pair_config_from_profile() -> None:
@@ -92,3 +97,23 @@ def test_prebuilt_skill_files_call_agent_chain_binary() -> None:
         assert "agc review" in text
         assert "agc p" in text
         assert "uv run python" not in text
+
+
+def test_integration_setup_defaults_to_host_session_review() -> None:
+    setup = build_integration_setup("codex", Path("integrations/codex").resolve())
+
+    assert setup["mode"] == "host-session-review"
+    assert setup["commands"] == [
+        f"codex plugin marketplace add {Path('integrations/codex').resolve()}",
+        "codex plugin add agent-chain-wrapper@agent-chain-local",
+    ]
+    assert any("agc review" in note for note in setup["notes"])
+
+
+def test_copy_integration_pack_copies_skill_files(tmp_path: Path) -> None:
+    copied = copy_integration_pack("kimi", tmp_path)
+
+    assert copied == tmp_path / "kimi"
+    skill = copied / "skills" / "agent-chain" / "SKILL.md"
+    assert skill.exists()
+    assert "agc review" in skill.read_text(encoding="utf-8")

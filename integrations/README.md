@@ -6,6 +6,20 @@ CLI hosts.
 The `agc` executable must be installed and available on `PATH`.
 `agent-chain` remains available as the long-form command.
 
+## One-command setup helper
+
+From the AgentChain repository, run:
+
+```powershell
+agc install codex
+agc install kimi
+agc install antigravity
+agc install all
+```
+
+Use `--copy-to DIR` to copy the prebuilt files first and then print setup steps
+for the copied location.
+
 ## Codex
 
 Register the prebuilt local marketplace:

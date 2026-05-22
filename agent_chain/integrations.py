@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import shutil
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 
 SUPPORTED_CLIS = ("codex", "kimi", "antigravity")
+SUPPORTED_INSTALL_TARGETS = (*SUPPORTED_CLIS, "all")
 PROFILE_PAIRS = {
     "codex-antigravity": ("codex", "antigravity"),
     "codex-kimi": ("codex", "kimi"),
@@ -126,3 +129,79 @@ def uses_generated_cli_config(
     reviewer_cli: Optional[str] = None,
 ) -> bool:
     return bool(profile or coder_cli or reviewer_cli)
+
+
+def integration_assets_root(repo_root: Optional[Path] = None) -> Path:
+    """Return the checked-in integration pack directory."""
+    root = repo_root or Path(__file__).resolve().parents[1]
+    assets = root / "integrations"
+    if not assets.exists():
+        raise FileNotFoundError(f"integration assets not found: {assets}")
+    return assets
+
+
+def copy_integration_pack(
+    host: str,
+    destination: Path,
+    *,
+    repo_root: Optional[Path] = None,
+    force: bool = False,
+) -> Path:
+    """Copy one prebuilt host integration pack into a destination directory."""
+    if host not in SUPPORTED_CLIS:
+        raise ValueError(f"unsupported install host: {host}")
+
+    source = integration_assets_root(repo_root) / host
+    target = destination / host
+    if target.exists() and not force:
+        raise FileExistsError(f"integration target already exists: {target}")
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(source, target, dirs_exist_ok=force)
+    return target
+
+
+def build_integration_setup(host: str, host_root: Path) -> Dict[str, Any]:
+    """Return setup instructions for one CLI host integration pack."""
+    if host == "codex":
+        return {
+            "host": host,
+            "mode": "host-session-review",
+            "path": str(host_root),
+            "commands": [
+                f"codex plugin marketplace add {host_root}",
+                "codex plugin add agent-chain-wrapper@agent-chain-local",
+            ],
+            "notes": [
+                "Codex remains the coder. The plugin skill calls `agc review` for external review by default.",
+                "`agc p` is only for explicitly delegated coder/reviewer pairs.",
+            ],
+        }
+    if host == "kimi":
+        skills_dir = host_root / "skills"
+        return {
+            "host": host,
+            "mode": "host-session-review",
+            "path": str(host_root),
+            "commands": [
+                f'kimi --skills-dir {skills_dir} --prompt "Use agent-chain for this request."',
+            ],
+            "notes": [
+                "Kimi remains the coder. The skill calls `agc review -R codex` by default.",
+                "`agc p` is only for explicitly delegated coder/reviewer pairs.",
+            ],
+        }
+    if host == "antigravity":
+        return {
+            "host": host,
+            "mode": "host-session-review",
+            "path": str(host_root),
+            "commands": [],
+            "notes": [
+                f"Register skills from: {host_root / 'skills'}",
+                f"Register custom commands from: {host_root / 'commands'}",
+                "Antigravity remains the coder. The skill/command calls `agc review` by default.",
+                "`agc p` is only for explicitly delegated coder/reviewer pairs.",
+            ],
+        }
+    raise ValueError(f"unsupported install host: {host}")

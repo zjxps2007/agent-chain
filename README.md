@@ -108,6 +108,28 @@ pip install -e ".[dev]"
 pytest
 ```
 
+## CLI skill/plugin setup
+
+Use `agc install` to set up the prebuilt host integration files. The default
+flow for every host is: the current CLI session writes code, then AgentChain
+calls only the reviewer with `agc review`.
+
+```powershell
+agc install codex
+agc install kimi
+agc install antigravity
+agc install all
+```
+
+If you want to copy the prebuilt files somewhere first:
+
+```powershell
+agc install all --copy-to D:\Tools\agent-chain-integrations
+```
+
+Fully delegated runs are still available with `agc p`, but only use them when
+you explicitly want AgentChain to spawn both the coder and reviewer CLIs.
+
 ## 실시간 웹 UI
 
 `agc ui`는 review 중심 화면입니다. 현재 CLI 세션이 직접 코딩하고, UI는 외부 reviewer CLI 호출과 그 결과만 실시간으로 보여줍니다.

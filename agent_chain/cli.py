@@ -11,9 +11,13 @@ from typing import Any, Dict
 from .core import Agent, Context, Pipeline, _apply_agent_result, _context_output, _step_output_key
 from .integrations import (
     SUPPORTED_CLIS,
+    SUPPORTED_INSTALL_TARGETS,
     SUPPORTED_PROFILES,
     build_cli_pair_config,
+    build_integration_setup,
     build_cli_review_config,
+    copy_integration_pack,
+    integration_assets_root,
     uses_generated_cli_config,
 )
 from .pipeline import run_pipeline
@@ -289,6 +293,49 @@ def cmd_init(args: argparse.Namespace) -> None:
     print("  agc r \"요청문\" --plugins-dir ./agents")
 
 
+def _install_hosts(target: str) -> tuple[str, ...]:
+    if target == "all":
+        return SUPPORTED_CLIS
+    return (target,)
+
+
+def cmd_install(args: argparse.Namespace) -> None:
+    hosts = _install_hosts(args.target)
+    setups = []
+    copy_root = Path(args.copy_to).resolve() if args.copy_to else None
+    assets_root = integration_assets_root()
+
+    for host in hosts:
+        host_root = assets_root / host
+        if copy_root:
+            host_root = copy_integration_pack(
+                host,
+                copy_root,
+                force=args.force,
+            )
+        setups.append(build_integration_setup(host, host_root.resolve()))
+
+    if args.json:
+        print(json.dumps({"integrations": setups}, ensure_ascii=False, indent=2))
+        return
+
+    print("AgentChain integration setup")
+    print("Default flow: current CLI session codes, AgentChain calls only the reviewer via `agc review`.\n")
+    for setup in setups:
+        print(f"[{setup['host']}] {setup['path']}")
+        commands = setup.get("commands", [])
+        if commands:
+            print("Commands:")
+            for command in commands:
+                print(f"  {command}")
+        notes = setup.get("notes", [])
+        if notes:
+            print("Notes:")
+            for note in notes:
+                print(f"  - {note}")
+        print()
+
+
 def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=prog,
@@ -469,6 +516,34 @@ def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
         help="초기화할 디렉토리 (기본값: 현재 디렉토리)",
     )
 
+    # install/setup
+    install_parser = subparsers.add_parser(
+        "install",
+        aliases=["setup"],
+        help="Print or copy prebuilt Codex/Kimi/Antigravity skill/plugin setup files.",
+    )
+    install_parser.add_argument(
+        "target",
+        choices=SUPPORTED_INSTALL_TARGETS,
+        help="CLI host integration to set up.",
+    )
+    install_parser.add_argument(
+        "--copy-to",
+        default=None,
+        metavar="DIR",
+        help="Copy the prebuilt integration pack into DIR/<target> before printing setup steps.",
+    )
+    install_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Allow --copy-to to merge into an existing target directory.",
+    )
+    install_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print setup metadata as JSON.",
+    )
+
     # web UI
     web_parser = subparsers.add_parser(
         "web",
@@ -501,6 +576,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_review(args)
     elif args.command in {"init", "i"}:
         cmd_init(args)
+    elif args.command in {"install", "setup"}:
+        cmd_install(args)
     elif args.command in {"web", "ui"}:
         from .web import serve
 
